@@ -19,7 +19,7 @@
       font-family: "Noto Sans KR", sans-serif;
       background: #f5f7fb;
       margin: 0;
-      padding: 90px 14px 40px 14px;
+      padding: 90px 14px 80px 14px;
     }
     h2 { margin: 0 0 12px; }
     .toolbar { display:flex; gap:8px; align-items:center; margin-bottom:10px; }
@@ -31,11 +31,11 @@
     thead { background:var(--purple); color:#fff; }
     th, td { border:1px solid #ececec; padding:8px 6px; text-align:center; font-size:14px; }
     th:nth-child(1){ width:120px; }
-    th:nth-child(2){ width:180px; text-align:left; }
+    /* 헤더 가운데, 셀은 왼쪽 */
+    th:nth-child(2){ width:180px; text-align:center; }
     td:nth-child(2){ text-align:left; }
     .name-cell{ font-size:18px; font-weight:600; }
 
-    /* ▶ 셀 안 레이아웃: 왼쪽(시간) / 오른쪽(상태+조작) */
     .status-box{
       display:flex; align-items:center; justify-content:space-between; gap:10px;
       min-height:62px; padding:4px 6px; border-radius:10px; transition:background .2s;
@@ -59,7 +59,6 @@
       width:34px; height:28px; font-size:18px; line-height:26px; cursor:pointer;
     }
 
-    /* ▶ 상단 간호사 호출 패널 (버튼만 깜빡) */
     .nurse-panel{
       position:fixed; top:10px; right:10px; background:rgba(255,255,255,0.98);
       border:2px solid #dcdcdc; border-radius:999px; padding:8px 12px; box-shadow:0 10px 26px rgba(0,0,0,0.08);
@@ -71,13 +70,24 @@
     @keyframes blinkBtn{0%{background:#ffe6e6;transform:translateY(0)}50%{background:#ffb3b3;transform:translateY(-1px)}100%{background:#ffe6e6;transform:translateY(0)}}
     .blink-btn{ animation:blinkBtn .7s ease-in-out infinite; }
 
-    /* ▶ 완료 시 해당 셀만 은은하게 깜빡 */
     @keyframes cellBlink{
       0%{ box-shadow:0 0 0 0 rgba(255,0,0,.22); }
       50%{ box-shadow:0 0 0 10px rgba(255,0,0,.08); }
       100%{ box-shadow:0 0 0 0 rgba(255,0,0,.22); }
     }
     .cell-blink{ animation:cellBlink 1s ease-in-out infinite; background:#fff8f8; }
+
+    .sound-panel{
+      position:fixed; right:10px; bottom:10px; z-index:998;
+      background:#fff; border:1px solid #e5e5e5; border-radius:12px; padding:10px 12px; width:320px;
+      box-shadow:0 10px 24px rgba(0,0,0,.08);
+      font-size:13px; color:#333;
+    }
+    .sound-row{ display:grid; grid-template-columns: 1fr auto; gap:8px; align-items:center; margin:8px 0; }
+    .sound-row .controls{ display:flex; gap:6px; align-items:center; }
+    .sound-panel select, .sound-panel input[type="range"]{ width:160px; font-size:12px; padding:3px 6px; }
+    .btn-xs{ padding:4px 8px; font-size:12px; border-radius:6px; border:none; cursor:pointer; }
+    .btn-outline{ background:#fff; border:1px solid #bbb; }
   </style>
 </head>
 <body>
@@ -87,7 +97,7 @@
     <span>기본 시간(분):</span>
     <input type="number" id="defaultMinutes" value="10" min="1" />
     <button class="btn btn-apply" onclick="applyDefaultMinutes()">적용</button>
-    <small style="color:#666;">추나는 5분 고정 / 각 칸에서 ＋ − 로 조정</small>
+    <small style="color:#666;">추나는 5분 고정 / 각 칸에서 ＋ − 로 조정(30초 단위)</small>
   </div>
 
   <table id="timerTable">
@@ -113,14 +123,46 @@
     <button class="btn-call" id="call-3과" onclick="toggleCall('3과')">3과</button>
   </div>
 
-  <!-- 치료 완료 알림음 -->
-  <audio id="alarmSound" src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" preload="auto"></audio>
-  <!-- 간호사 호출 알림음(10초) -->
-  <audio id="nurseSound" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg" preload="auto"></audio>
+  <div class="sound-panel">
+    <div class="sound-row">
+      <div><b>완료 알림음</b></div>
+      <div class="controls">
+        <button class="btn-xs btn-outline" id="btnTestComplete">🔊 테스트</button>
+      </div>
+    </div>
+    <div class="sound-row">
+      <select id="selCompleteSound">
+        <option value="https://cdn.pixabay.com/audio/2022/03/15/audio_9d9a4b4b67.mp3">부드러운 벨(기본)</option>
+        <option value="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg">클래식 알람</option>
+      </select>
+      <div class="controls">
+        <input id="volComplete" type="range" min="0" max="1" step="0.01" value="0.5" />
+      </div>
+    </div>
 
-  <!-- Firebase + 동기화 -->
+    <div class="sound-row">
+      <div><b>호출 알림음</b></div>
+      <div class="controls">
+        <button class="btn-xs btn-outline" id="btnTestNurse">🔊 테스트</button>
+      </div>
+    </div>
+    <div class="sound-row">
+      <select id="selNurseSound">
+        <option value="https://actions.google.com/sounds/v1/alarms/beep_short.ogg">짧은 비프(기본)</option>
+        <option value="https://cdn.pixabay.com/audio/2022/03/15/audio_9d9a4b4b67.mp3">부드러운 벨</option>
+      </select>
+      <div class="controls">
+        <input id="volNurse" type="range" min="0" max="1" step="0.01" value="0.6" />
+      </div>
+    </div>
+  </div>
+
+  <audio id="alarmSound" preload="auto"
+         src="https://cdn.pixabay.com/audio/2022/03/15/audio_9d9a4b4b67.mp3"></audio>
+  <audio id="nurseSound" preload="auto"
+         src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"></audio>
+
   <script type="module">
-    /***** Firebase SDK (CDN) *****/
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
     import { getDatabase, ref, set, update, onValue, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js";
 
@@ -137,29 +179,23 @@
     const app = initializeApp(firebaseConfig);
     const db  = getDatabase(app);
 
-    /***** 상수/상태 *****/
     let DEFAULT_MINUTES = 10;
     const ROW_COUNT = 12;
     const COLS = ["핫팩", "물리치료", "침치료", "추나"];
     const sound = document.getElementById("alarmSound");
     const nurseSound = document.getElementById("nurseSound");
-    const deptColors = {"":"", "대표":"var(--dept-rep)", "양방":"var(--dept-west)", "1과":"var(--dept-1)", "2과":"var(--dept-2)", "3과":"var(--dept-3)"};
     const ROOM = "rooms/default";
+    const deptColors = {"":"", "대표":"var(--dept-rep)", "양방":"var(--dept-west)", "1과":"var(--dept-1)", "2과":"var(--dept-2)", "3과":"var(--dept-3)"};
 
-    // 인터벌 관리
-    const intervals = {}; // key -> setInterval id
-
-    // 호출 사운드 10초 제어용
+    const intervals = {};
     const lastCallState = { "대표": false, "양방": false, "1과": false, "2과": false, "3과": false };
     const nurseStopTimers = {};
 
-    /***** UI 구축 *****/
     function buildTable(){
       const tbody = document.getElementById("tableBody");
       for(let i=1;i<=ROW_COUNT;i++){
         const tr = document.createElement("tr"); tr.id = "row-"+i;
 
-        // 담당
         const docTd = document.createElement("td");
         docTd.innerHTML = `
           <select class="doctor" onchange="changeDoctor(${i}, this.value)">
@@ -172,7 +208,6 @@
           </select>`;
         tr.appendChild(docTd);
 
-        // 환자명
         const nameTd = document.createElement("td");
         nameTd.className = "name-cell";
         nameTd.textContent = `<${i}번 베드>`;
@@ -182,7 +217,6 @@
         });
         tr.appendChild(nameTd);
 
-        // 4칸(핫팩/물리/침/추나)
         COLS.forEach((colName, j) => {
           const key = `r${i}_c${j}`;
           const td  = document.createElement("td");
@@ -194,8 +228,9 @@
               <div class="right-col">
                 <span class="pill pill-wait" id="status-${key}">대기</span>
                 <div class="adjust-box">
-                  <button class="btn-adjust" onclick="adjustTime('${key}', 1); event.stopPropagation();">＋</button>
-                  <button class="btn-adjust" onclick="adjustTime('${key}', -1); event.stopPropagation();">−</button>
+                  <!-- 30초 단위 증감 -->
+                  <button class="btn-adjust" onclick="adjustTime('${key}', 30); event.stopPropagation();">＋</button>
+                  <button class="btn-adjust" onclick="adjustTime('${key}', -30); event.stopPropagation();">−</button>
                 </div>
                 <button class="mini-btn mini-start" onclick="startTimer('${key}', '${colName}'); event.stopPropagation();">진행</button>
                 <button class="mini-btn mini-stop"  onclick="stopTimer('${key}'); event.stopPropagation();">중지</button>
@@ -209,21 +244,18 @@
     }
     window.buildTable = buildTable;
 
-    /***** 기본 시간 *****/
     window.applyDefaultMinutes = () => {
       const v = parseInt(document.getElementById("defaultMinutes").value);
       if (!isNaN(v) && v > 0) { DEFAULT_MINUTES = v; alert(`기본 시간 ${v}분으로 설정되었습니다.`); }
     };
 
-    /***** 담당 변경 *****/
     window.changeDoctor = (rowIndex, dept) => {
       update(ref(db, `${ROOM}/rows/${rowIndex}`), { dept });
       const tr = document.getElementById("row-"+rowIndex);
       if (tr) tr.style.background = deptColors[dept] || "";
     };
 
-    /***** 타이머 조작 *****/
-    // 데이터 모델: timers/{key} = {colName, status, endAt, remaining}
+    // 진행
     window.startTimer = (key, colName) => {
       const baseMin = (colName === "추나") ? 5 : DEFAULT_MINUTES;
       const tRef = ref(db, `${ROOM}/timers/${key}`);
@@ -238,7 +270,7 @@
       }, { onlyOnce: true });
     };
 
-    // 완료/대기 모두에서 "중지" 누르면 대기로 리셋
+    // 중지 → 대기
     window.stopTimer = (key) => {
       const tRef = ref(db, `${ROOM}/timers/${key}`);
       update(tRef, { status: "대기", endAt: null, remaining: 0 });
@@ -246,31 +278,30 @@
       if (box) box.classList.remove("cell-blink");
     };
 
-    // 완료 중인 셀의 빈 공간 클릭 → 대기로 리셋
+    // 완료 셀 클릭 → 대기 리셋
     window.resetIfDone = (key) => {
       const st = document.getElementById("status-"+key);
-      if (st && st.textContent === "완료") {
-        stopTimer(key);
-      }
+      if (st && st.textContent === "완료") stopTimer(key);
     };
 
-    window.adjustTime = (key, diffMin) => {
+    // ★ 30초 단위 증감
+    window.adjustTime = (key, diffSec) => {
       const tRef = ref(db, `${ROOM}/timers/${key}`);
       onValue(tRef, (snap) => {
         const v = snap.val() || {};
-        const diffMs = diffMin * 60 * 1000;
+        const diffMs = diffSec * 1000;
         if (v.status === "진행" && v.endAt) {
           update(tRef, { endAt: v.endAt + diffMs });
         } else {
           const base = (v.colName === "추나") ? 5 : DEFAULT_MINUTES;
-          const cur = (typeof v.remaining === "number" && v.remaining > 0) ? v.remaining : base*60;
-          const nxt = Math.max(60, cur + diffMin*60);
-          update(tRef, { remaining: nxt });
+          const curSec = (typeof v.remaining === "number" && v.remaining > 0) ? v.remaining : base * 60;
+          const nxtSec = Math.max(30, curSec + diffSec); // 최소 30초
+          update(tRef, { remaining: nxtSec });
         }
       }, { onlyOnce: true });
     };
 
-    /***** 간호사 호출: 버튼만 깜빡 + 10초 소리 *****/
+    // 호출
     window.toggleCall = (dept) => {
       const cRef = ref(db, `${ROOM}/nurseCalls/${dept}`);
       onValue(cRef, (snap) => {
@@ -287,7 +318,6 @@
         btn.classList.toggle("on", on);
         btn.classList.toggle("blink-btn", on);
 
-        // 소리: off -> on 전환 시 10초 재생 / on -> off 즉시 정지
         if (on && !lastCallState[dept]) {
           try { nurseSound.currentTime = 0; nurseSound.loop = true; nurseSound.play(); } catch(e) {}
           clearTimeout(nurseStopTimers[dept]);
@@ -302,8 +332,7 @@
       });
     });
 
-    /***** 데이터 구독(실시간 반영) *****/
-    // 행/담당/이름
+    // 행 데이터
     onValue(ref(db, `${ROOM}/rows`), (snap) => {
       const rows = snap.val() || {};
       for (let i=1;i<=ROW_COUNT;i++){
@@ -320,7 +349,7 @@
       }
     });
 
-    // 타이머
+    // 타이머 데이터
     onValue(ref(db, `${ROOM}/timers`), (snap) => {
       const timers = snap.val() || {};
       Object.entries(timers).forEach(([key, v]) => {
@@ -333,9 +362,7 @@
         st.textContent = status;
         st.className = "pill " + (status==="진행" ? "pill-run" : status==="완료" ? "pill-done" : "pill-wait");
 
-        // 깜빡임 초기화
         box.classList.remove("cell-blink");
-
         if (intervals[key]) { clearInterval(intervals[key]); intervals[key]=null; }
 
         if (status === "진행" && v.endAt){
@@ -346,29 +373,47 @@
               clearInterval(intervals[key]); intervals[key]=null;
               st.textContent = "완료"; st.className = "pill pill-done";
               tt.textContent = "";
-              box.classList.add("cell-blink"); // ▶ 해당 셀만 깜빡
+              box.classList.add("cell-blink");
               try{ sound.currentTime=0; sound.play(); }catch(e){}
               update(ref(db, `${ROOM}/timers/${key}`), { status: "완료", endAt: null, remaining: 0 });
             }
           };
           tick();
-          intervals[key] = setInterval(tick, 1000);
+          intervals[key] = setInterval(tick, 250); // 0.25s 갱신으로 30초 증감 반영 부드럽게
         } else {
           const base = (v.colName === "추나") ? 5 : DEFAULT_MINUTES;
           const remain = (typeof v.remaining === "number" && v.remaining>0) ? v.remaining : (status==="완료"?0:base*60);
           tt.textContent = remain>0 ? fmt(remain) : "";
-          if (status === "완료") {
-            box.classList.add("cell-blink"); // 완료값이 DB로 이미 저장돼 있을 때도 깜빡 유지
-          }
+          if (status === "완료") box.classList.add("cell-blink");
         }
       });
     });
 
-    /***** 유틸 *****/
     function fmt(sec){ const m=Math.floor(sec/60), s=sec%60; return `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`; }
-
-    // 초기 렌더
     buildTable();
+
+    /* 사운드 설정 */
+    const selComplete = document.getElementById('selCompleteSound');
+    const volComplete = document.getElementById('volComplete');
+    const btnTestComplete = document.getElementById('btnTestComplete');
+    const selNurse = document.getElementById('selNurseSound');
+    const volNurse = document.getElementById('volNurse');
+    const btnTestNurse = document.getElementById('btnTestNurse');
+
+    sound.volume = parseFloat(volComplete.value || "0.5");
+    nurseSound.volume = parseFloat(volNurse.value || "0.6");
+
+    volComplete.addEventListener('input', () => { sound.volume = parseFloat(volComplete.value); });
+    volNurse.addEventListener('input', () => { nurseSound.volume = parseFloat(volNurse.value); });
+    selComplete.addEventListener('change', () => { sound.src = selComplete.value; sound.load(); });
+    selNurse.addEventListener('change', () => { nurseSound.src = selNurse.value; nurseSound.load(); });
+
+    btnTestComplete.addEventListener('click', async () => {
+      try { sound.currentTime = 0; await sound.play(); } catch(e) {}
+    });
+    btnTestNurse.addEventListener('click', async () => {
+      try { nurseSound.currentTime = 0; nurseSound.loop = false; await nurseSound.play(); } catch(e) {}
+    });
   </script>
 </body>
 </html>
