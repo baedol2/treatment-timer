@@ -17,49 +17,67 @@
     }
     body {
       font-family: "Noto Sans KR", sans-serif;
-      background: #f0f2f5;
+      background: #f5f7fb;
       margin: 0;
-      padding: 100px 20px 60px 20px;
+      padding: 90px 14px 40px 14px;
     }
-    h2 { margin: 0 0 16px; }
-    .toolbar { display:flex; gap:8px; align-items:center; margin-bottom:14px; }
-    .toolbar input { padding:6px 8px; font-size:14px; border:1px solid #ccc; border-radius:6px; width:80px; }
+    h2 { margin: 0 0 12px; }
+    .toolbar { display:flex; gap:8px; align-items:center; margin-bottom:10px; }
+    .toolbar input { padding:6px 8px; font-size:14px; border:1px solid #ccc; border-radius:6px; width:82px; }
     .btn { border:none; border-radius:6px; padding:6px 12px; font-size:14px; cursor:pointer; }
     .btn-apply { background:#007bff; color:#fff; }
 
-    table { width:100%; border-collapse:collapse; background:#fff; box-shadow:0 2px 8px rgba(0,0,0,0.04); }
+    table { width:100%; border-collapse:collapse; background:#fff; box-shadow:0 2px 8px rgba(0,0,0,0.03); }
     thead { background:var(--purple); color:#fff; }
-    th, td { border:1px solid #e5e5e5; padding:10px 8px; text-align:center; font-size:14px; }
+    th, td { border:1px solid #ececec; padding:8px 6px; text-align:center; font-size:14px; }
     th:nth-child(1){ width:120px; }
-    th:nth-child(2){ width:170px; text-align:left; }
+    th:nth-child(2){ width:180px; text-align:left; }
     td:nth-child(2){ text-align:left; }
+    .name-cell{ font-size:18px; font-weight:600; }
 
-    .status-box{ display:flex; flex-direction:column; gap:8px; align-items:center; justify-content:center; }
-    .pill{ display:inline-block; padding:4px 12px; border-radius:999px; font-size:13px; font-weight:600; }
-    .pill-wait{ background:#fff; border:1.5px solid #ddd; }
-    .pill-run{ background:var(--yellow); }
-    .pill-done{ background:#ff9e9e; }
-    .time-text{ font-weight:700; color:#d9534f; font-size:16px; }
-    .mini-btn{ border:none; border-radius:6px; padding:4px 10px; font-size:12px; cursor:pointer; }
-    .mini-start{ background:#0d6efd; color:#fff; }
-    .mini-stop{ background:#ffc107; }
-    .adjust-box{ display:flex; gap:6px; }
-    .btn-adjust{ background:#fff; border:1px solid #bbb; border-radius:6px; width:32px; height:28px; line-height:24px; text-align:center; cursor:pointer; font-size:18px; }
-    select.doctor{ width:130px; padding:6px 8px; border-radius:8px; border:1px solid #bbb; font-size:14px; background:#fff; }
-
-    .nurse-panel{
-      position:fixed; top:12px; right:12px; background:rgba(255,255,255,0.98);
-      border:2px solid #cfcfcf; border-radius:999px; padding:10px 14px; box-shadow:0 10px 26px rgba(0,0,0,0.12);
-      display:flex; gap:14px; align-items:center; z-index:999;
+    /* ▶ 셀 안 레이아웃: 왼쪽(시간) / 오른쪽(상태+조작) */
+    .status-box{
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      min-height:62px; padding:4px 6px; border-radius:10px; transition:background .2s;
+      cursor:default;
     }
-    .nurse-label{ font-size:16px; font-weight:800; margin-right:4px; white-space:nowrap; }
-    .btn-call{ border:none; border-radius:999px; padding:10px 18px; font-size:15px; cursor:pointer; background:#f2f3f5; font-weight:700; white-space:nowrap; letter-spacing:.2px; box-shadow:0 2px 6px rgba(0,0,0,0.06); }
-    .btn-call.on{ outline:3px solid #ff4d4f; background:#ffe6e6; }
+    .left-col{ display:flex; align-items:center; gap:10px; }
+    .time-text{ font-weight:800; color:#d9534f; font-size:18px; min-width:54px; text-align:left; }
+    .right-col{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+    .pill{ display:inline-block; padding:4px 10px; border-radius:999px; font-size:12px; font-weight:700; }
+    .pill-wait{ background:#fff; border:1.5px solid #ddd; color:#444; }
+    .pill-run{ background:var(--yellow); color:#222; }
+    .pill-done{ background:#ffb6b6; color:#681212; }
 
-    @keyframes blinkRow{0%{filter:brightness(1)}50%{filter:brightness(1.45)}100%{filter:brightness(1)}}
+    .mini-btn{ border:none; border-radius:6px; padding:5px 10px; font-size:12px; cursor:pointer; }
+    .mini-start{ background:#0d6efd; color:#fff; }
+    .mini-stop{ background:#ffc107; color:#222; }
+
+    .adjust-box{ display:flex; gap:6px; }
+    .btn-adjust{
+      background:#fff; border:1px solid #bdbdbd; border-radius:6px;
+      width:34px; height:28px; font-size:18px; line-height:26px; cursor:pointer;
+    }
+
+    /* ▶ 상단 간호사 호출 패널 (버튼만 깜빡) */
+    .nurse-panel{
+      position:fixed; top:10px; right:10px; background:rgba(255,255,255,0.98);
+      border:2px solid #dcdcdc; border-radius:999px; padding:8px 12px; box-shadow:0 10px 26px rgba(0,0,0,0.08);
+      display:flex; gap:12px; align-items:center; z-index:999;
+    }
+    .nurse-label{ font-size:15px; font-weight:800; margin-right:4px; white-space:nowrap; }
+    .btn-call{ border:none; border-radius:999px; padding:8px 16px; font-size:14px; cursor:pointer; background:#f1f3f5; font-weight:700; white-space:nowrap; letter-spacing:.2px; box-shadow:0 2px 6px rgba(0,0,0,0.05); }
+    .btn-call.on{ outline:3px solid #ff4d4f; background:#ffe6e6; }
     @keyframes blinkBtn{0%{background:#ffe6e6;transform:translateY(0)}50%{background:#ffb3b3;transform:translateY(-1px)}100%{background:#ffe6e6;transform:translateY(0)}}
-    .blink-row{ animation:blinkRow .8s linear infinite; }
     .blink-btn{ animation:blinkBtn .7s ease-in-out infinite; }
+
+    /* ▶ 완료 시 해당 셀만 은은하게 깜빡 */
+    @keyframes cellBlink{
+      0%{ box-shadow:0 0 0 0 rgba(255,0,0,.22); }
+      50%{ box-shadow:0 0 0 10px rgba(255,0,0,.08); }
+      100%{ box-shadow:0 0 0 0 rgba(255,0,0,.22); }
+    }
+    .cell-blink{ animation:cellBlink 1s ease-in-out infinite; background:#fff8f8; }
   </style>
 </head>
 <body>
@@ -69,7 +87,7 @@
     <span>기본 시간(분):</span>
     <input type="number" id="defaultMinutes" value="10" min="1" />
     <button class="btn btn-apply" onclick="applyDefaultMinutes()">적용</button>
-    <small style="color:#666;">추나는 5분 고정 / 각 칸에서 ＋－로 조정</small>
+    <small style="color:#666;">추나는 5분 고정 / 각 칸에서 ＋ − 로 조정</small>
   </div>
 
   <table id="timerTable">
@@ -95,7 +113,10 @@
     <button class="btn-call" id="call-3과" onclick="toggleCall('3과')">3과</button>
   </div>
 
+  <!-- 치료 완료 알림음 -->
   <audio id="alarmSound" src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" preload="auto"></audio>
+  <!-- 간호사 호출 알림음(10초) -->
+  <audio id="nurseSound" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg" preload="auto"></audio>
 
   <!-- Firebase + 동기화 -->
   <script type="module">
@@ -121,12 +142,16 @@
     const ROW_COUNT = 12;
     const COLS = ["핫팩", "물리치료", "침치료", "추나"];
     const sound = document.getElementById("alarmSound");
+    const nurseSound = document.getElementById("nurseSound");
     const deptColors = {"":"", "대표":"var(--dept-rep)", "양방":"var(--dept-west)", "1과":"var(--dept-1)", "2과":"var(--dept-2)", "3과":"var(--dept-3)"};
-    const blinkingDepts = new Set();
     const ROOM = "rooms/default";
 
-    // 로컬 인터벌 관리
+    // 인터벌 관리
     const intervals = {}; // key -> setInterval id
+
+    // 호출 사운드 10초 제어용
+    const lastCallState = { "대표": false, "양방": false, "1과": false, "2과": false, "3과": false };
+    const nurseStopTimers = {};
 
     /***** UI 구축 *****/
     function buildTable(){
@@ -149,7 +174,8 @@
 
         // 환자명
         const nameTd = document.createElement("td");
-        nameTd.textContent = i + "번 환자";
+        nameTd.className = "name-cell";
+        nameTd.textContent = `<${i}번 베드>`;
         nameTd.contentEditable = true;
         nameTd.addEventListener("blur", () => {
           update(ref(db, `${ROOM}/rows/${i}`), { name: nameTd.textContent });
@@ -161,16 +187,18 @@
           const key = `r${i}_c${j}`;
           const td  = document.createElement("td");
           td.innerHTML = `
-            <div class="status-box" id="box-${key}">
-              <span class="pill pill-wait" id="status-${key}">대기</span>
-              <span class="time-text" id="time-${key}"></span>
-              <div class="adjust-box">
-                <button class="btn-adjust" onclick="adjustTime('${key}', 1)">＋</button>
-                <button class="btn-adjust" onclick="adjustTime('${key}', -1)">－</button>
+            <div class="status-box" id="box-${key}" onclick="resetIfDone('${key}')">
+              <div class="left-col">
+                <span class="time-text" id="time-${key}"></span>
               </div>
-              <div>
-                <button class="mini-btn mini-start" onclick="startTimer('${key}', '${colName}')">진행</button>
-                <button class="mini-btn mini-stop"  onclick="stopTimer('${key}')">중지</button>
+              <div class="right-col">
+                <span class="pill pill-wait" id="status-${key}">대기</span>
+                <div class="adjust-box">
+                  <button class="btn-adjust" onclick="adjustTime('${key}', 1); event.stopPropagation();">＋</button>
+                  <button class="btn-adjust" onclick="adjustTime('${key}', -1); event.stopPropagation();">−</button>
+                </div>
+                <button class="mini-btn mini-start" onclick="startTimer('${key}', '${colName}'); event.stopPropagation();">진행</button>
+                <button class="mini-btn mini-stop"  onclick="stopTimer('${key}'); event.stopPropagation();">중지</button>
               </div>
             </div>`;
           tr.appendChild(td);
@@ -184,31 +212,24 @@
     /***** 기본 시간 *****/
     window.applyDefaultMinutes = () => {
       const v = parseInt(document.getElementById("defaultMinutes").value);
-      if (!isNaN(v) && v > 0) { DEFAULT_MINUTES = v; alert(`기본 시간 ${v}분으로 설정`); }
+      if (!isNaN(v) && v > 0) { DEFAULT_MINUTES = v; alert(`기본 시간 ${v}분으로 설정되었습니다.`); }
     };
 
     /***** 담당 변경 *****/
     window.changeDoctor = (rowIndex, dept) => {
       update(ref(db, `${ROOM}/rows/${rowIndex}`), { dept });
+      const tr = document.getElementById("row-"+rowIndex);
+      if (tr) tr.style.background = deptColors[dept] || "";
     };
 
     /***** 타이머 조작 *****/
-    // 데이터 모델: timers/{key} = {colName, status, duration, endAt, remaining}
+    // 데이터 모델: timers/{key} = {colName, status, endAt, remaining}
     window.startTimer = (key, colName) => {
       const baseMin = (colName === "추나") ? 5 : DEFAULT_MINUTES;
-      // DB에서 현재 상태를 읽어가며 갱신
       const tRef = ref(db, `${ROOM}/timers/${key}`);
-      update(tRef, {
-        colName,
-        status: "진행",
-        // 남은 값이 없으면 duration 새로 세팅
-        duration: serverTimestamp(), // dummy(서버각인) — 실제 남은시간은 endAt로 계산
-      });
-      // endAt은 클라이언트 기준으로 갱신
-      // (간단/즉시성 목적: 초 단위 오차는 허용)
+      update(tRef, { colName, status: "진행" });
       onValue(tRef, (snap) => {
         const v = snap.val() || {};
-        // 기존 remaining가 있으면 그 기반으로, 없으면 baseMin으로
         const now = Date.now();
         const remainMs = (typeof v.remaining === "number" && v.remaining > 0)
           ? v.remaining * 1000
@@ -217,22 +238,26 @@
       }, { onlyOnce: true });
     };
 
+    // 완료/대기 모두에서 "중지" 누르면 대기로 리셋
     window.stopTimer = (key) => {
       const tRef = ref(db, `${ROOM}/timers/${key}`);
-      // stop 시점 남은 시간 계산해서 DB 저장(재개 대비)
-      onValue(tRef, (snap) => {
-        const v = snap.val() || {};
-        let remaining = 0;
-        if (v.endAt) remaining = Math.max(0, Math.floor((v.endAt - Date.now())/1000));
-        update(tRef, { status: "대기", endAt: null, remaining });
-      }, { onlyOnce: true });
+      update(tRef, { status: "대기", endAt: null, remaining: 0 });
+      const box = document.getElementById("box-"+key);
+      if (box) box.classList.remove("cell-blink");
+    };
+
+    // 완료 중인 셀의 빈 공간 클릭 → 대기로 리셋
+    window.resetIfDone = (key) => {
+      const st = document.getElementById("status-"+key);
+      if (st && st.textContent === "완료") {
+        stopTimer(key);
+      }
     };
 
     window.adjustTime = (key, diffMin) => {
       const tRef = ref(db, `${ROOM}/timers/${key}`);
       onValue(tRef, (snap) => {
         const v = snap.val() || {};
-        // 실행 중이면 endAt 이동, 대기 중이면 remaining/duration만 조정
         const diffMs = diffMin * 60 * 1000;
         if (v.status === "진행" && v.endAt) {
           update(tRef, { endAt: v.endAt + diffMs });
@@ -245,17 +270,40 @@
       }, { onlyOnce: true });
     };
 
-    /***** 간호사 호출 *****/
+    /***** 간호사 호출: 버튼만 깜빡 + 10초 소리 *****/
     window.toggleCall = (dept) => {
       const cRef = ref(db, `${ROOM}/nurseCalls/${dept}`);
       onValue(cRef, (snap) => {
-        const on = !(snap.val() && snap.val().on);
-        set(cRef, { on });
+        const next = !(snap.val() && snap.val().on);
+        set(cRef, { on: next, at: serverTimestamp() });
       }, { onlyOnce: true });
     };
 
-    /***** 구독(실시간 반영) *****/
-    // 1) 행/담당/이름
+    onValue(ref(db, `${ROOM}/nurseCalls`), (snap) => {
+      const c = snap.val() || {};
+      ["대표","양방","1과","2과","3과"].forEach(dept=>{
+        const btn = document.getElementById("call-"+dept);
+        const on = !!(c[dept] && c[dept].on);
+        btn.classList.toggle("on", on);
+        btn.classList.toggle("blink-btn", on);
+
+        // 소리: off -> on 전환 시 10초 재생 / on -> off 즉시 정지
+        if (on && !lastCallState[dept]) {
+          try { nurseSound.currentTime = 0; nurseSound.loop = true; nurseSound.play(); } catch(e) {}
+          clearTimeout(nurseStopTimers[dept]);
+          nurseStopTimers[dept] = setTimeout(() => {
+            nurseSound.pause(); nurseSound.currentTime = 0;
+          }, 10000);
+        } else if (!on && lastCallState[dept]) {
+          clearTimeout(nurseStopTimers[dept]);
+          nurseSound.pause(); nurseSound.currentTime = 0;
+        }
+        lastCallState[dept] = on;
+      });
+    });
+
+    /***** 데이터 구독(실시간 반영) *****/
+    // 행/담당/이름
     onValue(ref(db, `${ROOM}/rows`), (snap) => {
       const rows = snap.val() || {};
       for (let i=1;i<=ROW_COUNT;i++){
@@ -269,27 +317,25 @@
 
         const nameTd = tr.children[1];
         if (r.name && nameTd.textContent !== r.name) nameTd.textContent = r.name;
-
-        // 호출 깜빡임 반영
-        if (r.dept && blinkingDepts.has(r.dept)) tr.classList.add("blink-row");
-        else tr.classList.remove("blink-row");
       }
     });
 
-    // 2) 타이머(모든 셀)
+    // 타이머
     onValue(ref(db, `${ROOM}/timers`), (snap) => {
       const timers = snap.val() || {};
       Object.entries(timers).forEach(([key, v]) => {
         const st = document.getElementById("status-"+key);
         const tt = document.getElementById("time-"+key);
-        if (!st || !tt) return;
+        const box = document.getElementById("box-"+key);
+        if (!st || !tt || !box) return;
 
-        // pill 상태
         const status = v.status || "대기";
         st.textContent = status;
         st.className = "pill " + (status==="진행" ? "pill-run" : status==="완료" ? "pill-done" : "pill-wait");
 
-        // 인터벌 정리
+        // 깜빡임 초기화
+        box.classList.remove("cell-blink");
+
         if (intervals[key]) { clearInterval(intervals[key]); intervals[key]=null; }
 
         if (status === "진행" && v.endAt){
@@ -300,40 +346,22 @@
               clearInterval(intervals[key]); intervals[key]=null;
               st.textContent = "완료"; st.className = "pill pill-done";
               tt.textContent = "";
-              try{ sound.play(); }catch(e){}
+              box.classList.add("cell-blink"); // ▶ 해당 셀만 깜빡
+              try{ sound.currentTime=0; sound.play(); }catch(e){}
               update(ref(db, `${ROOM}/timers/${key}`), { status: "완료", endAt: null, remaining: 0 });
             }
           };
           tick();
           intervals[key] = setInterval(tick, 1000);
         } else {
-          // 대기/완료 상태
           const base = (v.colName === "추나") ? 5 : DEFAULT_MINUTES;
           const remain = (typeof v.remaining === "number" && v.remaining>0) ? v.remaining : (status==="완료"?0:base*60);
           tt.textContent = remain>0 ? fmt(remain) : "";
+          if (status === "완료") {
+            box.classList.add("cell-blink"); // 완료값이 DB로 이미 저장돼 있을 때도 깜빡 유지
+          }
         }
       });
-    });
-
-    // 3) 간호사 호출
-    onValue(ref(db, `${ROOM}/nurseCalls`), (snap) => {
-      const c = snap.val() || {};
-      ["대표","양방","1과","2과","3과"].forEach(d=>{
-        const b = document.getElementById("call-"+d);
-        const on = !!(c[d] && c[d].on);
-        b.classList.toggle("on", on);
-        b.classList.toggle("blink-btn", on);
-        if (on) blinkingDepts.add(d); else blinkingDepts.delete(d);
-      });
-
-      // 현재 선택된 담당 기준으로 행 깜빡임 토글
-      for (let i=1;i<=ROW_COUNT;i++){
-        const row = document.getElementById("row-"+i);
-        const sel = row?.querySelector("select.doctor");
-        const dept = sel?.value || "";
-        if (dept && blinkingDepts.has(dept)) row.classList.add("blink-row");
-        else row.classList.remove("blink-row");
-      }
     });
 
     /***** 유틸 *****/
