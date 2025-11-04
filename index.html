@@ -8,7 +8,6 @@
     :root {
       --purple: #4b0082;
       --yellow: #ffe08a;
-      --red: #ff9e9e;
       --dept-rep: #ffd9a3;
       --dept-west: #b6dcff;
       --dept-1: #d7c7ff;
@@ -19,9 +18,9 @@
       font-family: "Noto Sans KR", sans-serif;
       background: #f5f7fb;
       margin: 0;
-      padding: 90px 14px 80px 14px;
+      padding: 90px 14px 20px 14px; /* 상단 고정 패널들 여백 */
     }
-    h2 { margin: 0 0 12px; }
+    h2 { margin: 0 0 12px; display:inline-block; }
     .toolbar { display:flex; gap:8px; align-items:center; margin-bottom:10px; }
     .toolbar input { padding:6px 8px; font-size:14px; border:1px solid #ccc; border-radius:6px; width:82px; }
     .btn { border:none; border-radius:6px; padding:6px 12px; font-size:14px; cursor:pointer; }
@@ -31,7 +30,7 @@
     thead { background:var(--purple); color:#fff; }
     th, td { border:1px solid #ececec; padding:8px 6px; text-align:center; font-size:14px; }
     th:nth-child(1){ width:120px; }
-    /* 헤더 가운데, 셀은 왼쪽 */
+    /* 헤더는 가운데, 셀은 왼쪽(요청사항) */
     th:nth-child(2){ width:180px; text-align:center; }
     td:nth-child(2){ text-align:left; }
     .name-cell{ font-size:18px; font-weight:600; }
@@ -59,10 +58,11 @@
       width:34px; height:28px; font-size:18px; line-height:26px; cursor:pointer;
     }
 
+    /* 상단 고정: 간호사 호출 */
     .nurse-panel{
       position:fixed; top:10px; right:10px; background:rgba(255,255,255,0.98);
       border:2px solid #dcdcdc; border-radius:999px; padding:8px 12px; box-shadow:0 10px 26px rgba(0,0,0,0.08);
-      display:flex; gap:12px; align-items:center; z-index:999;
+      display:flex; gap:12px; align-items:center; z-index:1000;
     }
     .nurse-label{ font-size:15px; font-weight:800; margin-right:4px; white-space:nowrap; }
     .btn-call{ border:none; border-radius:999px; padding:8px 16px; font-size:14px; cursor:pointer; background:#f1f3f5; font-weight:700; white-space:nowrap; letter-spacing:.2px; box-shadow:0 2px 6px rgba(0,0,0,0.05); }
@@ -70,6 +70,7 @@
     @keyframes blinkBtn{0%{background:#ffe6e6;transform:translateY(0)}50%{background:#ffb3b3;transform:translateY(-1px)}100%{background:#ffe6e6;transform:translateY(0)}}
     .blink-btn{ animation:blinkBtn .7s ease-in-out infinite; }
 
+    /* 완료 시 해당 셀만 은은 깜빡 */
     @keyframes cellBlink{
       0%{ box-shadow:0 0 0 0 rgba(255,0,0,.22); }
       50%{ box-shadow:0 0 0 10px rgba(255,0,0,.08); }
@@ -77,17 +78,19 @@
     }
     .cell-blink{ animation:cellBlink 1s ease-in-out infinite; background:#fff8f8; }
 
-    .sound-panel{
-      position:fixed; right:10px; bottom:10px; z-index:998;
-      background:#fff; border:1px solid #e5e5e5; border-radius:12px; padding:10px 12px; width:320px;
-      box-shadow:0 10px 24px rgba(0,0,0,.08);
-      font-size:13px; color:#333;
+    /* 상단 고정: 소리 ON/OFF 토글 (제목 우측 상단 고정) */
+    .sound-toggle{
+      position:fixed; top:10px; right:370px; /* 간호사 패널 왼쪽에 고정 배치 */
+      z-index:1000; background:rgba(255,255,255,0.98);
+      border:2px solid #dcdcdc; border-radius:999px; padding:8px 12px;
+      box-shadow:0 10px 26px rgba(0,0,0,0.08); display:flex; align-items:center; gap:8px;
     }
-    .sound-row{ display:grid; grid-template-columns: 1fr auto; gap:8px; align-items:center; margin:8px 0; }
-    .sound-row .controls{ display:flex; gap:6px; align-items:center; }
-    .sound-panel select, .sound-panel input[type="range"]{ width:160px; font-size:12px; padding:3px 6px; }
-    .btn-xs{ padding:4px 8px; font-size:12px; border-radius:6px; border:none; cursor:pointer; }
-    .btn-outline{ background:#fff; border:1px solid #bbb; }
+    .sound-btn{
+      border:none; border-radius:999px; padding:8px 14px; font-size:14px; cursor:pointer; font-weight:700;
+      background:#f1f3f5; box-shadow:0 2px 6px rgba(0,0,0,0.05);
+    }
+    .sound-btn.on{ outline:3px solid #4caf50; }
+    .sound-btn.off{ outline:3px solid #999; background:#f8f8f8; color:#666; }
   </style>
 </head>
 <body>
@@ -114,6 +117,13 @@
     <tbody id="tableBody"></tbody>
   </table>
 
+  <!-- 상단 고정: 소리 ON/OFF -->
+  <div class="sound-toggle">
+    <b>소리</b>
+    <button id="btnSound" class="sound-btn on" onclick="toggleSound()">🔈 ON</button>
+  </div>
+
+  <!-- 상단 고정: 간호사 호출 -->
   <div class="nurse-panel">
     <span class="nurse-label">간호사 호출</span>
     <button class="btn-call" id="call-대표" onclick="toggleCall('대표')">대표</button>
@@ -123,43 +133,8 @@
     <button class="btn-call" id="call-3과" onclick="toggleCall('3과')">3과</button>
   </div>
 
-  <div class="sound-panel">
-    <div class="sound-row">
-      <div><b>완료 알림음</b></div>
-      <div class="controls">
-        <button class="btn-xs btn-outline" id="btnTestComplete">🔊 테스트</button>
-      </div>
-    </div>
-    <div class="sound-row">
-      <select id="selCompleteSound">
-        <option value="https://cdn.pixabay.com/audio/2022/03/15/audio_9d9a4b4b67.mp3">부드러운 벨(기본)</option>
-        <option value="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg">클래식 알람</option>
-      </select>
-      <div class="controls">
-        <input id="volComplete" type="range" min="0" max="1" step="0.01" value="0.5" />
-      </div>
-    </div>
-
-    <div class="sound-row">
-      <div><b>호출 알림음</b></div>
-      <div class="controls">
-        <button class="btn-xs btn-outline" id="btnTestNurse">🔊 테스트</button>
-      </div>
-    </div>
-    <div class="sound-row">
-      <select id="selNurseSound">
-        <option value="https://actions.google.com/sounds/v1/alarms/beep_short.ogg">짧은 비프(기본)</option>
-        <option value="https://cdn.pixabay.com/audio/2022/03/15/audio_9d9a4b4b67.mp3">부드러운 벨</option>
-      </select>
-      <div class="controls">
-        <input id="volNurse" type="range" min="0" max="1" step="0.01" value="0.6" />
-      </div>
-    </div>
-  </div>
-
-  <audio id="alarmSound" preload="auto"
-         src="https://cdn.pixabay.com/audio/2022/03/15/audio_9d9a4b4b67.mp3"></audio>
-  <audio id="nurseSound" preload="auto"
+  <!-- 모든 소리는 짧은 비프 고정 -->
+  <audio id="beep" preload="auto"
          src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"></audio>
 
   <script type="module">
@@ -182,15 +157,38 @@
     let DEFAULT_MINUTES = 10;
     const ROW_COUNT = 12;
     const COLS = ["핫팩", "물리치료", "침치료", "추나"];
-    const sound = document.getElementById("alarmSound");
-    const nurseSound = document.getElementById("nurseSound");
     const ROOM = "rooms/default";
     const deptColors = {"":"", "대표":"var(--dept-rep)", "양방":"var(--dept-west)", "1과":"var(--dept-1)", "2과":"var(--dept-2)", "3과":"var(--dept-3)"};
 
     const intervals = {};
     const lastCallState = { "대표": false, "양방": false, "1과": false, "2과": false, "3과": false };
-    const nurseStopTimers = {};
+    const nurseBeepTimers = {};  // setInterval refs
+    const nurseStopTimers  = {}; // setTimeout refs
 
+    /* ====== 사운드 ON/OFF ====== */
+    let soundEnabled = true;
+    const beep = document.getElementById('beep');
+    window.toggleSound = () => {
+      soundEnabled = !soundEnabled;
+      const btn = document.getElementById('btnSound');
+      if (soundEnabled) { btn.textContent = "🔈 ON"; btn.classList.remove('off'); btn.classList.add('on'); }
+      else { btn.textContent = "🔇 OFF"; btn.classList.remove('on'); btn.classList.add('off'); stopAllNurseBeeps(); }
+    };
+    function playBeep(times=1, intervalMs=1000){
+      if (!soundEnabled) return;
+      let count = 0;
+      const doBeep = async () => { try { beep.currentTime = 0; await beep.play(); } catch(e){} };
+      doBeep();
+      if (times>1){
+        const intv = setInterval(async ()=>{
+          count++;
+          if (count >= times) { clearInterval(intv); return; }
+          doBeep();
+        }, intervalMs);
+      }
+    }
+
+    /* ====== 테이블 생성 ====== */
     function buildTable(){
       const tbody = document.getElementById("tableBody");
       for(let i=1;i<=ROW_COUNT;i++){
@@ -228,7 +226,6 @@
               <div class="right-col">
                 <span class="pill pill-wait" id="status-${key}">대기</span>
                 <div class="adjust-box">
-                  <!-- 30초 단위 증감 -->
                   <button class="btn-adjust" onclick="adjustTime('${key}', 30); event.stopPropagation();">＋</button>
                   <button class="btn-adjust" onclick="adjustTime('${key}', -30); event.stopPropagation();">−</button>
                 </div>
@@ -244,18 +241,20 @@
     }
     window.buildTable = buildTable;
 
+    /* ====== 기본 시간 ====== */
     window.applyDefaultMinutes = () => {
       const v = parseInt(document.getElementById("defaultMinutes").value);
       if (!isNaN(v) && v > 0) { DEFAULT_MINUTES = v; alert(`기본 시간 ${v}분으로 설정되었습니다.`); }
     };
 
+    /* ====== 담당 변경 ====== */
     window.changeDoctor = (rowIndex, dept) => {
       update(ref(db, `${ROOM}/rows/${rowIndex}`), { dept });
       const tr = document.getElementById("row-"+rowIndex);
       if (tr) tr.style.background = deptColors[dept] || "";
     };
 
-    // 진행
+    /* ====== 타이머 ====== */
     window.startTimer = (key, colName) => {
       const baseMin = (colName === "추나") ? 5 : DEFAULT_MINUTES;
       const tRef = ref(db, `${ROOM}/timers/${key}`);
@@ -270,7 +269,6 @@
       }, { onlyOnce: true });
     };
 
-    // 중지 → 대기
     window.stopTimer = (key) => {
       const tRef = ref(db, `${ROOM}/timers/${key}`);
       update(tRef, { status: "대기", endAt: null, remaining: 0 });
@@ -278,13 +276,12 @@
       if (box) box.classList.remove("cell-blink");
     };
 
-    // 완료 셀 클릭 → 대기 리셋
     window.resetIfDone = (key) => {
       const st = document.getElementById("status-"+key);
       if (st && st.textContent === "완료") stopTimer(key);
     };
 
-    // ★ 30초 단위 증감
+    // 30초 증감
     window.adjustTime = (key, diffSec) => {
       const tRef = ref(db, `${ROOM}/timers/${key}`);
       onValue(tRef, (snap) => {
@@ -295,13 +292,13 @@
         } else {
           const base = (v.colName === "추나") ? 5 : DEFAULT_MINUTES;
           const curSec = (typeof v.remaining === "number" && v.remaining > 0) ? v.remaining : base * 60;
-          const nxtSec = Math.max(30, curSec + diffSec); // 최소 30초
+          const nxtSec = Math.max(30, curSec + diffSec);
           update(tRef, { remaining: nxtSec });
         }
       }, { onlyOnce: true });
     };
 
-    // 호출
+    /* ====== 간호사 호출 ====== */
     window.toggleCall = (dept) => {
       const cRef = ref(db, `${ROOM}/nurseCalls/${dept}`);
       onValue(cRef, (snap) => {
@@ -318,21 +315,34 @@
         btn.classList.toggle("on", on);
         btn.classList.toggle("blink-btn", on);
 
+        // 비프 반복(1초 간격 = 클래식 알람 속도), 10초 동안
         if (on && !lastCallState[dept]) {
-          try { nurseSound.currentTime = 0; nurseSound.loop = true; nurseSound.play(); } catch(e) {}
-          clearTimeout(nurseStopTimers[dept]);
-          nurseStopTimers[dept] = setTimeout(() => {
-            nurseSound.pause(); nurseSound.currentTime = 0;
-          }, 10000);
+          startNurseBeep(dept);
         } else if (!on && lastCallState[dept]) {
-          clearTimeout(nurseStopTimers[dept]);
-          nurseSound.pause(); nurseSound.currentTime = 0;
+          stopNurseBeep(dept);
         }
         lastCallState[dept] = on;
       });
     });
 
-    // 행 데이터
+    function startNurseBeep(dept){
+      if (nurseBeepTimers[dept]) clearInterval(nurseBeepTimers[dept]);
+      if (nurseStopTimers[dept])  clearTimeout(nurseStopTimers[dept]);
+
+      const doBeep = ()=> { if (soundEnabled) { try { beep.currentTime=0; beep.play(); } catch(e){} } };
+      doBeep(); // 즉시 1회
+      nurseBeepTimers[dept] = setInterval(doBeep, 1000); // 1초 간격
+      nurseStopTimers[dept]  = setTimeout(()=> stopNurseBeep(dept), 10000); // 10초 후 자동 정지
+    }
+    function stopNurseBeep(dept){
+      if (nurseBeepTimers[dept]) { clearInterval(nurseBeepTimers[dept]); nurseBeepTimers[dept]=null; }
+      if (nurseStopTimers[dept])  { clearTimeout(nurseStopTimers[dept]); nurseStopTimers[dept]=null; }
+    }
+    function stopAllNurseBeeps(){
+      ["대표","양방","1과","2과","3과"].forEach(stopNurseBeep);
+    }
+
+    /* ====== 행/타이머 데이터 구독 ====== */
     onValue(ref(db, `${ROOM}/rows`), (snap) => {
       const rows = snap.val() || {};
       for (let i=1;i<=ROW_COUNT;i++){
@@ -349,7 +359,6 @@
       }
     });
 
-    // 타이머 데이터
     onValue(ref(db, `${ROOM}/timers`), (snap) => {
       const timers = snap.val() || {};
       Object.entries(timers).forEach(([key, v]) => {
@@ -374,12 +383,13 @@
               st.textContent = "완료"; st.className = "pill pill-done";
               tt.textContent = "";
               box.classList.add("cell-blink");
-              try{ sound.currentTime=0; sound.play(); }catch(e){}
+              // 완료 비프(1회)
+              playBeep(1, 1000);
               update(ref(db, `${ROOM}/timers/${key}`), { status: "완료", endAt: null, remaining: 0 });
             }
           };
           tick();
-          intervals[key] = setInterval(tick, 250); // 0.25s 갱신으로 30초 증감 반영 부드럽게
+          intervals[key] = setInterval(tick, 250);
         } else {
           const base = (v.colName === "추나") ? 5 : DEFAULT_MINUTES;
           const remain = (typeof v.remaining === "number" && v.remaining>0) ? v.remaining : (status==="완료"?0:base*60);
@@ -391,29 +401,6 @@
 
     function fmt(sec){ const m=Math.floor(sec/60), s=sec%60; return `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`; }
     buildTable();
-
-    /* 사운드 설정 */
-    const selComplete = document.getElementById('selCompleteSound');
-    const volComplete = document.getElementById('volComplete');
-    const btnTestComplete = document.getElementById('btnTestComplete');
-    const selNurse = document.getElementById('selNurseSound');
-    const volNurse = document.getElementById('volNurse');
-    const btnTestNurse = document.getElementById('btnTestNurse');
-
-    sound.volume = parseFloat(volComplete.value || "0.5");
-    nurseSound.volume = parseFloat(volNurse.value || "0.6");
-
-    volComplete.addEventListener('input', () => { sound.volume = parseFloat(volComplete.value); });
-    volNurse.addEventListener('input', () => { nurseSound.volume = parseFloat(volNurse.value); });
-    selComplete.addEventListener('change', () => { sound.src = selComplete.value; sound.load(); });
-    selNurse.addEventListener('change', () => { nurseSound.src = selNurse.value; nurseSound.load(); });
-
-    btnTestComplete.addEventListener('click', async () => {
-      try { sound.currentTime = 0; await sound.play(); } catch(e) {}
-    });
-    btnTestNurse.addEventListener('click', async () => {
-      try { nurseSound.currentTime = 0; nurseSound.loop = false; await nurseSound.play(); } catch(e) {}
-    });
   </script>
 </body>
 </html>
