@@ -142,11 +142,11 @@
 
     /* 조금 더 높이 확보: 행 높이 여백 */
     tbody > tr > td { padding:8px; }
-  
+  </style>
+<style>
 /* touch/mouse 공통 제스처 최적화 */
 button, .btn { touch-action: manipulation; }
-</style>
-</head>
+</style></head>
 <body>
   <div class="topbar">
     <h2>🏥 치료실 타이머판 (큰 버튼/큰 시간)</h2>
@@ -563,25 +563,40 @@ button, .btn { touch-action: manipulation; }
   </script>
 
 <script>
-/* 터치→합성 click 이중 실행 방지(전역, 최소 변경) */
+/* 터치/마우스 공통: '첫 이벤트만 허용' 중복(합성 click 등)은 350ms 내 차단 */
 (function(){
-  var blockUntil = 0;
-  window.addEventListener('pointerup', function(e){
-    try{
-      if (e && e.pointerType === 'touch') {
-        blockUntil = Date.now() + 400; // 400ms 동안 합성 click 차단
+  var THRESHOLD = 350; // ms
+  var lastTsMap = new WeakMap();
+
+  function closestActivatable(el){
+    while (el && el !== document && el.nodeType === 1){
+      var tag = el.tagName;
+      if (tag === 'BUTTON' || tag === 'A' || el.getAttribute('role') === 'button' || (el.classList && el.classList.contains('btn'))){
+        return el;
       }
-    }catch(_){}
-  }, { capture:true });
-  window.addEventListener('click', function(e){
+      el = el.parentElement;
+    }
+    return null;
+  }
+
+  function maybeDedup(e){
     try{
-      if (Date.now() < blockUntil) {
-        e.preventDefault();
-        e.stopPropagation();
+      var t = closestActivatable(e.target);
+      if (!t) return;
+      var now = Date.now();
+      var last = lastTsMap.get(t) || 0;
+      if (now - last < THRESHOLD){
+        e.preventDefault && e.preventDefault();
+        e.stopPropagation && e.stopPropagation();
         return false;
       }
+      lastTsMap.set(t, now);
     }catch(_){}
-  }, { capture:true, passive:false });
+  }
+
+  ['pointerup','click','touchend'].forEach(function(type){
+    window.addEventListener(type, maybeDedup, { capture:true, passive:false });
+  });
 })();
 </script>
 
