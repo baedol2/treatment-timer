@@ -62,7 +62,7 @@
     .time-text{
       font-weight:900;
       color:#d9534f;
-      font-size:clamp(32px, 4.0vw, 44px); /* 크게 */
+      font-size:clamp(40px, 5.0vw, 56px); /* 더 크게 */
       min-width:96px;
       text-align:left;
       letter-spacing:1px;
@@ -70,7 +70,7 @@
     .right-col{
       display:grid;
       grid-auto-flow:row;
-      grid-template-columns: repeat(2, minmax(120px, 1fr));
+      grid-template-columns: repeat(3, minmax(120px, 1fr));
       gap:12px;
       justify-content:end;
       align-content:center;
@@ -83,22 +83,22 @@
 
     .mini-btn{
       border:none; border-radius:16px;
-      padding:16px 20px;
-      font-size:22px;
+      padding:18px 22px;
+      font-size:28px;
       font-weight:900;
       cursor:pointer;
       width:100%; /* 셀 가득 차도록 */
-      height:64px;
+      height:72px;
     }
     .mini-start{ background:#0d6efd; color:#fff; }
     .mini-stop{  background:#ffc107; color:#222; }
 
-    .adjust-box{ display:flex; gap:12px; grid-column:1 / -1; justify-content:stretch; }
+    .adjust-box{ display:flex; flex-direction:column; gap:10px; justify-content:stretch; align-items:stretch; }
     .btn-adjust{
       background:#fff; border:3px solid #bdbdbd; border-radius:16px;
       width:100%;
-      height:64px;
-      font-size:30px;
+      height:60px;
+      font-size:28px;
       cursor:pointer;
       font-weight:900;
     }
@@ -122,6 +122,10 @@
     .io-group{ display:flex; gap:10px; margin-top:10px; justify-content:center; }
     .io-btn{ border:3px solid #bbb; background:#fff; border-radius:999px; padding:8px 14px; font-size:16px; font-weight:900; cursor:pointer; }
     .io-btn.active{ background:#222; color:#fff; border-color:#222; }
+
+    /* 활성화 색상 지정: 입원=파란색, 외래=초록색 */
+    .io-btn[data-type="입원"].active{ background:#0d6efd; color:#fff; border-color:#0d6efd; }
+    .io-btn[data-type="외래"].active{ background:#2e7d32; color:#fff; border-color:#2e7d32; }
 
     .chuna-box{
       display:flex; align-items:center; justify-content:space-between; gap:16px;
@@ -175,7 +179,7 @@
     <span>기본 시간(분):</span>
     <input type="number" id="defaultMinutes" value="10" min="1" />
     <button class="btn btn-apply" onclick="applyDefaultMinutes()">적용</button>
-    <small style="color:#666;">추나는 타이머 대신 O/X로 진행 여부 체크 · 각 칸에서 ＋/− 30초 조정</small>
+    <small style="color:#666;">추나는 타이머 대신 O/X로 진행 여부 체크 · 각 칸에서 ＋/- 조정</small>
   </div>
 
   <table id="timerTable">
@@ -526,8 +530,8 @@
                 <button class="mini-btn mini-start" onclick="startTimer('${key}', '${colName}'); event.stopPropagation();">진행</button>
                 <button class="mini-btn mini-stop"  onclick="stopTimer('${key}'); event.stopPropagation();">중지</button>
                 <div class="adjust-box">
-                  <button class="btn-adjust" onclick="adjustTime('${key}', 30); event.stopPropagation();">＋ 30초</button>
-                  <button class="btn-adjust" onclick="adjustTime('${key}',-30); event.stopPropagation();">− 30초</button>
+                  <button class="btn-adjust" onclick="adjustTime('${key}', 30); event.stopPropagation();">+</button>
+                  <button class="btn-adjust" onclick="adjustTime('${key}',-30); event.stopPropagation();">-</button>
                 </div>
               </div>
             </div>`;
