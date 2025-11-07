@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>치료실 타이머 보드 v3.1 (층 + 역할, 패치)</title>
+  <title>치료실 타이머 보드 v3.2 (큰 버튼/큰 시간 표시)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root{
@@ -19,56 +19,130 @@
     .topbar{ display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin-bottom:12px; }
     .grow{ flex:1 1 auto; }
     .toolbar{ display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:12px; }
-    .toolbar input{ padding:10px 12px; font-size:16px; border:1px solid #ccc; border-radius:10px; width:100px; }
-    .btn{ border:none; border-radius:10px; padding:10px 16px; font-size:16px; cursor:pointer; }
+    .toolbar input{ padding:12px 14px; font-size:20px; border:1px solid #ccc; border-radius:12px; width:120px; }
+    .btn{ border:none; border-radius:12px; padding:12px 18px; font-size:18px; cursor:pointer; }
     .btn-apply{ background:#007bff; color:#fff; }
-    .sound-btn{ border:none; border-radius:999px; padding:12px 18px; font-size:16px; cursor:pointer; font-weight:700; background:#f1f3f5; box-shadow:0 2px 6px rgba(0,0,0,0.05); }
-    .sound-btn.on{ outline:3px solid #4caf50; } .sound-btn.off{ outline:3px solid #999; background:#f8f8f8; color:#666; } .sound-btn.chan.on{ outline:3px solid #4caf50; }
-    .danger-btn{ border:none; border-radius:999px; padding:12px 18px; font-size:16px; cursor:pointer; font-weight:700; background:#ffecec; color:#9b1c1c; box-shadow:0 2px 6px rgba(0,0,0,0.05); border:1px solid #f5b3b3; }
-    .floor-tab{ border:none; border-radius:999px; padding:10px 16px; font-size:16px; cursor:pointer; background:#fff; }
+
+    .sound-btn{
+      border:none; border-radius:999px; padding:14px 20px; font-size:18px; cursor:pointer; font-weight:700;
+      background:#f1f3f5; box-shadow:0 2px 6px rgba(0,0,0,0.05);
+    }
+    .sound-btn.on{ outline:3px solid #4caf50; } .sound-btn.off{ outline:3px solid #999; background:#f8f8f8; color:#666; }
+    .sound-btn.chan.on{ outline:3px solid #4caf50; }
+
+    .danger-btn{
+      border:none; border-radius:999px; padding:14px 20px; font-size:18px; cursor:pointer; font-weight:700;
+      background:#ffecec; color:#9b1c1c; box-shadow:0 2px 6px rgba(0,0,0,0.05); border:1px solid #f5b3b3;
+    }
+
+    .floor-tab{ border:none; border-radius:999px; padding:12px 18px; font-size:18px; cursor:pointer; background:#fff; }
     .floor-tab.on{ outline:3px solid #6c5ce7; background:#eee; }
-    .role-chip{ border:none; border-radius:999px; padding:10px 16px; font-size:16px; cursor:pointer; background:#fff; }
+    .role-chip{ border:none; border-radius:999px; padding:12px 18px; font-size:18px; cursor:pointer; background:#fff; }
     .role-chip.on{ outline:3px solid #00c853; background:#eaffea; }
+
     table{ width:100%; border-collapse:collapse; background:#fff; box-shadow:0 2px 8px rgba(0,0,0,0.03); }
     thead{ background:var(--purple); color:#fff; }
-    th,td{ border:1px solid #ececec; padding:10px 8px; text-align:center; font-size:16px; }
-    th:nth-child(1){ width:150px; }
-    th:nth-child(2){ width:220px; text-align:center; } td:nth-child(2){ text-align:left; }
-    .name-cell{ font-size:clamp(20px, 2.4vw, 34px); font-weight:800; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .status-box{ display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:72px; padding:8px 10px; border-radius:12px; transition:background .2s; cursor:default; }
-    .left-col{ display:flex; align-items:center; gap:12px; }
-    .time-text{ font-weight:900; color:#d9534f; font-size:22px; min-width:66px; text-align:left; }
-    .right-col{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
-    .pill{ display:inline-block; padding:6px 12px; border-radius:999px; font-size:14px; font-weight:800; }
-    .pill-wait{ background:#fff; border:2px solid #ddd; color:#444; }
+    th,td{ border:1px solid #ececec; padding:12px 10px; text-align:center; font-size:18px; }
+    th:nth-child(1){ width:170px; }
+    th:nth-child(2){ width:260px; text-align:center; } td:nth-child(2){ text-align:left; }
+    .name-cell{ font-size:clamp(22px, 2.8vw, 38px); font-weight:800; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+    /* ====== 커다란 셀 레이아웃 ====== */
+    .status-box{
+      display:grid;
+      grid-template-columns: 1fr auto; /* 왼쪽: 시간/상태, 오른쪽: 컨트롤 묶음 */
+      align-items:center;
+      gap:16px;
+      min-height:140px; /* 기존보다 크게 */
+      padding:14px 14px;
+      border-radius:16px;
+      background:#ffffff;
+    }
+    .left-col{ display:flex; align-items:center; gap:14px; }
+    .time-text{
+      font-weight:900;
+      color:#d9534f;
+      font-size:clamp(32px, 4.0vw, 44px); /* 크게 */
+      min-width:96px;
+      text-align:left;
+      letter-spacing:1px;
+    }
+    .right-col{
+      display:grid;
+      grid-auto-flow:row;
+      grid-template-columns: repeat(2, minmax(120px, 1fr));
+      gap:12px;
+      justify-content:end;
+      align-content:center;
+    }
+
+    .pill{ display:inline-block; padding:10px 16px; border-radius:999px; font-size:18px; font-weight:900; }
+    .pill-wait{ background:#fff; border:3px solid #ddd; color:#444; }
     .pill-run{ background:var(--yellow); color:#222; }
     .pill-done{ background:#ffb6b6; color:#681212; }
-    .mini-btn{ border:none; border-radius:10px; padding:10px 16px; font-size:16px; cursor:pointer; }
-    .mini-start{ background:#0d6efd; color:#fff; } .mini-stop{  background:#ffc107; color:#222; }
-    .adjust-box{ display:flex; gap:8px; }
-    .btn-adjust{ background:#fff; border:2px solid #bdbdbd; border-radius:10px; width:48px; height:44px; font-size:24px; line-height:40px; cursor:pointer; }
-    @keyframes cellBlink{0%{box-shadow:0 0 0 0 rgba(255,0,0,.22);}50%{box-shadow:0 0 0 12px rgba(255,0,0,.08);}100%{box-shadow:0 0 0 0 rgba(255,0,0,.22);} }
+
+    .mini-btn{
+      border:none; border-radius:16px;
+      padding:16px 20px;
+      font-size:22px;
+      font-weight:900;
+      cursor:pointer;
+      width:100%; /* 셀 가득 차도록 */
+      height:64px;
+    }
+    .mini-start{ background:#0d6efd; color:#fff; }
+    .mini-stop{  background:#ffc107; color:#222; }
+
+    .adjust-box{ display:flex; gap:12px; grid-column:1 / -1; justify-content:stretch; }
+    .btn-adjust{
+      background:#fff; border:3px solid #bdbdbd; border-radius:16px;
+      width:100%;
+      height:64px;
+      font-size:30px;
+      cursor:pointer;
+      font-weight:900;
+    }
+
+    @keyframes cellBlink{0%{box-shadow:0 0 0 0 rgba(255,0,0,.22);}50%{box-shadow:0 0 0 18px rgba(255,0,0,.08);}100%{box-shadow:0 0 0 0 rgba(255,0,0,.22);} }
     .cell-blink{ animation:cellBlink 1s ease-in-out infinite; background:#fff8f8; }
-    .nurse-panel{ position:fixed; top:10px; right:10px; background:rgba(255,255,255,0.98); border:2px solid #dcdcdc; border-radius:999px; padding:10px 14px; box-shadow:0 10px 26px rgba(0,0,0,0.08); display:flex; gap:14px; align-items:center; z-index:1000; }
-    .nurse-label{ font-size:18px; font-weight:900; margin-right:6px; white-space:nowrap; }
-    .btn-call{ border:none; border-radius:999px; padding:10px 18px; font-size:16px; cursor:pointer; background:#f1f3f5; font-weight:800; white-space:nowrap; letter-spacing:.2px; box-shadow:0 2px 6px rgba(0,0,0,0.05); }
+
+    .nurse-panel{
+      position:fixed; top:10px; right:10px; background:rgba(255,255,255,0.98);
+      border:2px solid #dcdcdc; border-radius:999px; padding:12px 16px; box-shadow:0 10px 26px rgba(0,0,0,0.08);
+      display:flex; gap:14px; align-items:center; z-index:1000;
+    }
+    .nurse-label{ font-size:20px; font-weight:900; margin-right:6px; white-space:nowrap; }
+    .btn-call{ border:none; border-radius:999px; padding:12px 18px; font-size:18px; cursor:pointer; background:#f1f3f5; font-weight:800; white-space:nowrap; letter-spacing:.2px; box-shadow:0 2px 6px rgba(0,0,0,0.05); }
     .btn-call.on{ outline:3px solid #ff4d4f; background:#ffe6e6; }
     @keyframes blinkBtn{0%{background:#ffe6e6;transform:translateY(0)}50%{background:#ffb3b3;transform:translateY(-1px)}100%{background:#ffe6e6;transform:translateY(0)}}
     .blink-btn{ animation:blinkBtn .7s ease-in-out infinite; }
+
     .listen-group{ display:flex;gap:8px;align-items:center; flex-wrap:wrap; }
-    .io-group{ display:flex; gap:8px; margin-top:8px; justify-content:center; }
-    .io-btn{ border:2px solid #bbb; background:#fff; border-radius:999px; padding:6px 12px; font-size:14px; font-weight:800; cursor:pointer; }
+
+    .io-group{ display:flex; gap:10px; margin-top:10px; justify-content:center; }
+    .io-btn{ border:3px solid #bbb; background:#fff; border-radius:999px; padding:8px 14px; font-size:16px; font-weight:900; cursor:pointer; }
     .io-btn.active{ background:#222; color:#fff; border-color:#222; }
-    .chuna-box{ display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:72px; padding:8px 10px; border-radius:12px; }
-    .ox-group{ display:flex; gap:10px; }
-    .ox-btn{ border:none; border-radius:12px; padding:12px 18px; font-size:20px; font-weight:900; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,.06); }
+
+    .chuna-box{
+      display:flex; align-items:center; justify-content:space-between; gap:16px;
+      min-height:140px; padding:14px 14px; border-radius:16px;
+      background:#ffffff;
+    }
+    .ox-group{ display:flex; gap:16px; }
+    .ox-btn{
+      border:none; border-radius:16px; padding:16px 22px; font-size:28px; font-weight:900; cursor:pointer;
+      box-shadow:0 2px 6px rgba(0,0,0,.06);
+    }
     .ox-on{  background:#00c853; color:#fff; }
     .ox-off{ background:#e0e0e0; color:#111; }
+
+    /* 조금 더 높이 확보: 행 높이 여백 */
+    tbody > tr > td { padding:8px; }
   </style>
 </head>
 <body>
   <div class="topbar">
-    <h2>🏥 치료실 타이머판 (1F/2F)</h2>
+    <h2>🏥 치료실 타이머판 (큰 버튼/큰 시간)</h2>
     <div class="grow"></div>
 
     <div style="display:flex;gap:8px;align-items:center;">
@@ -149,6 +223,8 @@
     const FLOORS = ['1F','2F'];
     let currentFloor = new URLSearchParams(location.search).get('floor') || localStorage.getItem('currentFloor') || '1F';
     const ROLE_KEY = 'ttb_role';
+    const roleParam = new URLSearchParams(location.search).get('role');
+    if (roleParam === 'doctor' || roleParam === 'nurse') localStorage.setItem(ROLE_KEY, roleParam);
     let role = (localStorage.getItem(ROLE_KEY) || 'doctor'); // doctor | nurse
 
     let DEFAULT_MINUTES = 10;
@@ -164,7 +240,7 @@
     let completeSoundOn = JSON.parse(localStorage.getItem('completeSoundOn') || 'true');
     let nurseSoundOn    = JSON.parse(localStorage.getItem('nurseSoundOn')    || 'true');
     let listenChannels  = JSON.parse(localStorage.getItem('listenChannels')  || '{}');
-    ["대표","양방","1과","2과","3과"].forEach(d => { if (typeof listenChannels[d] !== 'boolean') listenChannels[d] = false; });
+    ["대표","양방","1과","2과","3과"].forEach(d => { if (typeof listenChannels[d] !== 'boolean') listenChannels[d] = true; });
 
     function save(k,v){ localStorage.setItem(k, JSON.stringify(v)); }
     function applyListenUI(){
@@ -359,6 +435,7 @@
     function teardownFloorListeners(){ floorRefs.forEach(r => off(r)); floorRefs = []; }
 
     let nurseRefs = [];
+    const nurseAggregates = { "대표":false,"양방":false,"1과":false,"2과":false,"3과":false };
     function attachNurseListeners_Doctor(){
       nurseRefs = FLOORS.map(f => ref(db, `rooms/${f}/nurseCalls`));
       nurseRefs.forEach(rf => onValue(rf, (snap)=>{
@@ -386,8 +463,6 @@
       });
     }
     function detachAllNurseListeners(){ nurseRefs.forEach(r => off(r)); nurseRefs = []; }
-
-    const nurseAggregates = { "대표":false,"양방":false,"1과":false,"2과":false,"3과":false };
     function applyNurseAggregateUI(){
       ["대표","양방","1과","2과","3과"].forEach(dept=>{
         const btn = document.getElementById("call-"+dept);
@@ -397,7 +472,7 @@
         if (on && !lastCallState[dept]) startNurseBeep(dept);
         else if (!on && lastCallState[dept]) stopNurseBeep(dept);
         lastCallState[dept] = on;
-        nurseAggregates[dept] = false; // 다음 사이클 초기화
+        nurseAggregates[dept] = false;
       });
     }
     function reattachAllNurseListeners(){
@@ -415,7 +490,7 @@
         const docTd = document.createElement("td");
         docTd.innerHTML = `
           <div>
-            <select class="doctor" style="width:100%;padding:8px 10px;font-size:16px;border-radius:8px;"
+            <select class="doctor" style="width:100%;padding:10px 12px;font-size:18px;border-radius:10px;"
               onchange="changeDoctor(${i}, this.value)">
               <option value="">선택</option>
               <option value="대표">대표</option>
@@ -443,15 +518,17 @@
           const td  = document.createElement("td");
           td.innerHTML = `
             <div class="status-box" id="box-${key}" onclick="resetIfDone('${key}')">
-              <div class="left-col"><span class="time-text" id="time-${key}"></span></div>
-              <div class="right-col">
+              <div class="left-col">
                 <span class="pill pill-wait" id="status-${key}">대기</span>
-                <div class="adjust-box">
-                  <button class="btn-adjust" onclick="adjustTime('${key}', 30); event.stopPropagation();">＋</button>
-                  <button class="btn-adjust" onclick="adjustTime('${key}',-30); event.stopPropagation();">−</button>
-                </div>
+                <span class="time-text" id="time-${key}"></span>
+              </div>
+              <div class="right-col">
                 <button class="mini-btn mini-start" onclick="startTimer('${key}', '${colName}'); event.stopPropagation();">진행</button>
                 <button class="mini-btn mini-stop"  onclick="stopTimer('${key}'); event.stopPropagation();">중지</button>
+                <div class="adjust-box">
+                  <button class="btn-adjust" onclick="adjustTime('${key}', 30); event.stopPropagation();">＋ 30초</button>
+                  <button class="btn-adjust" onclick="adjustTime('${key}',-30); event.stopPropagation();">− 30초</button>
+                </div>
               </div>
             </div>`;
           tr.appendChild(td);
@@ -461,7 +538,9 @@
         const chunaTd  = document.createElement("td");
         chunaTd.innerHTML = `
           <div class="chuna-box" id="box-${chunaKey}">
-            <div class="left-col"><span class="pill pill-wait" id="status-${chunaKey}">대기</span></div>
+            <div class="left-col">
+              <span class="pill pill-wait" id="status-${chunaKey}">대기</span>
+            </div>
             <div class="ox-group">
               <button class="ox-btn ox-on"  id="ox-on-${chunaKey}"  onclick="toggleChuna('${chunaKey}', true)">O</button>
               <button class="ox-btn ox-off" id="ox-off-${chunaKey}" onclick="toggleChuna('${chunaKey}', false)">X</button>
