@@ -344,11 +344,12 @@
 
     function playBeepOnce(){ try{ beep.currentTime = 0; beep.play(); } catch(e){} }
     function playBeepFor10Sec_Complete(){
+      /* PATCH: 완료 알람 5초로 단축 (초기 1회 + 4회 반복) - 다른 채널(송수신) 사운드에는 영향 없음 */
       if (!completeSoundOn) return;
       let count = 0;
       const doBeep = () => { try{ beep.currentTime = 0; beep.play(); } catch(e){} };
       doBeep();
-      const intv = setInterval(()=>{ count++; if (count >= 9) { clearInterval(intv); return; } doBeep(); }, 1000);
+      const intv = setInterval(()=>{ count++; if (count >= 4) { clearInterval(intv); return; } doBeep(); }, 1000);
     }
     function startNurseBeep(dept){
       if (nurseBeepTimers[dept]) clearInterval(nurseBeepTimers[dept]);
