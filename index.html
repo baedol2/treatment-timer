@@ -5,14 +5,6 @@
   <title>치료실 타이머 보드 v3.2 (큰 버튼/큰 시간 표시)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-
-/* touch/mouse 공통 제스처 최적화(비침해) */
-button, .btn, [role="button"], .role-chip, .pill, .status-box {
-  touch-action: manipulation;
-  -webkit-user-select: none;
-  user-select: none;
-}
-
     :root{
       --purple:#4b0082;
       --yellow:#ffe08a;
@@ -566,36 +558,5 @@ button, .btn, [role="button"], .role-chip, .pill, .status-box {
 
     buildTable(); attachFloorListeners(); reattachAllNurseListeners();
   </script>
-
-<script>
-// 함수 호출 가드: 같은 핸들러가 250ms 내 중복 호출되는 것을 1회로 제한
-(function(){
-  var MIN_INTERVAL = 250;
-  var _lastCall = Object.create(null);
-
-  function wrapGuard(fnName){
-    try {
-      var fn = window[fnName];
-      if (typeof fn !== 'function') return;
-      if (fn.__wrapped__) return;
-      var wrapped = function(){
-        var now = Date.now();
-        var last = _lastCall[fnName] || 0;
-        if (now - last < MIN_INTERVAL) return; // 중복 방지
-        _lastCall[fnName] = now;
-        return fn.apply(this, arguments);
-      };
-      wrapped.__wrapped__ = true;
-      window[fnName] = wrapped;
-    } catch(_) {}
-  }
-
-  // 본 파일에 존재하는 클릭 핸들러 함수들을 래핑 (존재하는 경우만 안전하게 적용)
-  ['startTimer','stopTimer','adjustTime','applyDefaultMinutes','setInOut','setRole',
-   'toggleChuna','toggleListen','toggleNurseSound','toggleCompleteSound','toggleCall',
-   'resetSettings','resetIfDone','switchFloor'].forEach(wrapGuard);
-})();
-</script>
-
 </body>
 </html>
