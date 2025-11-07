@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>치료실 타이머 보드(성모사랑한방병원)</title>
+  <title>치료실 타이머 보드 v3.2 (큰 버튼/큰 시간 표시)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root{
@@ -142,7 +142,10 @@
 
     /* 조금 더 높이 확보: 행 높이 여백 */
     tbody > tr > td { padding:8px; }
-  </style>
+  
+/* touch/mouse 공통 제스처 최적화 */
+button, .btn { touch-action: manipulation; }
+</style>
 </head>
 <body>
   <div class="topbar">
@@ -558,5 +561,29 @@
 
     buildTable(); attachFloorListeners(); reattachAllNurseListeners();
   </script>
+
+<script>
+/* 터치→합성 click 이중 실행 방지(전역, 최소 변경) */
+(function(){
+  var blockUntil = 0;
+  window.addEventListener('pointerup', function(e){
+    try{
+      if (e && e.pointerType === 'touch') {
+        blockUntil = Date.now() + 400; // 400ms 동안 합성 click 차단
+      }
+    }catch(_){}
+  }, { capture:true });
+  window.addEventListener('click', function(e){
+    try{
+      if (Date.now() < blockUntil) {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+      }
+    }catch(_){}
+  }, { capture:true, passive:false });
+})();
+</script>
+
 </body>
 </html>
