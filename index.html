@@ -1,486 +1,560 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8" />
-<title>치료실 타이머 보드</title>
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8" />
+  <title>치료실 타이머 보드 v2</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root{
+      --purple:#4b0082;
+      --yellow:#ffe08a;
+      --dept-rep:#ffd9a3;
+      --dept-west:#b6dcff;
+      --dept-1:#d7c7ff;
+      --dept-2:#c7ffd6;
+      --dept-3:#ffc7eb;
+    }
+    body{
+      font-family:"Noto Sans KR",sans-serif;
+      background:#f5f7fb;
+      margin:0;
+      padding:90px 14px 20px 14px; /* 우측 고정 패널 공간 */
+    }
+    h2{margin:0 0 12px; display:inline-block;}
 
-<style>
-body {
-  font-family: "Noto Sans KR", sans-serif;
-  background: #f5f7fb;
-  margin: 0;
-  padding: 90px 14px 20px 14px;
-}
-h2 {
-  margin: 0 0 12px;
-  font-size: 26px;
-}
+    /* 상단바 */
+    .topbar{ display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin-bottom:12px; }
+    .grow{ flex:1 1 auto; }
 
-/* 상단 메뉴 */
-.topbar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
-  margin-bottom: 10px;
-}
-.grow { flex: 1 1 auto; }
+    .toolbar{ display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:12px; }
+    .toolbar input{ padding:10px 12px; font-size:16px; border:1px solid #ccc; border-radius:10px; width:100px; }
+    .btn{ border:none; border-radius:10px; padding:10px 16px; font-size:16px; cursor:pointer; }
+    .btn-apply{ background:#007bff; color:#fff; }
 
-.sound-btn, .danger-btn {
-  border: none;
-  border-radius: 30px;
-  padding: 10px 18px;
-  font-size: 18px;
-  cursor: pointer;
-  font-weight: 700;
-  background: #f1f3f5;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-}
-.sound-btn.on { outline: 3px solid #4caf50; }
-.sound-btn.off { outline: 3px solid #999; background: #eee; color: #666; }
+    /* 사운드/채널/초기화 버튼 (대형화) */
+    .sound-btn{
+      border:none; border-radius:999px; padding:12px 18px; font-size:16px; cursor:pointer; font-weight:700;
+      background:#f1f3f5; box-shadow:0 2px 6px rgba(0,0,0,0.05);
+    }
+    .sound-btn.on{ outline:3px solid #4caf50; }
+    .sound-btn.off{ outline:3px solid #999; background:#f8f8f8; color:#666; }
+    .sound-btn.chan.on{ outline:3px solid #4caf50; }
 
-.danger-btn {
-  background: #ffe1e1;
-  color: #a90000;
-  border: 1px solid #ffabab;
-}
+    .danger-btn{
+      border:none; border-radius:999px; padding:12px 18px; font-size:16px; cursor:pointer; font-weight:700;
+      background:#ffecec; color:#9b1c1c; box-shadow:0 2px 6px rgba(0,0,0,0.05);
+      border:1px solid #f5b3b3;
+    }
 
-/* 테이블 */
-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: #fff;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-thead {
-  background: #4b0082;
-  color: #fff;
-  font-size: 20px;
-}
-th, td {
-  border: 1px solid #dcdcdc;
-  padding: 10px 8px;
-  text-align: center;
-  font-size: 18px;
-}
-td:nth-child(2) { text-align: left; }
+    table{ width:100%; border-collapse:collapse; background:#fff; box-shadow:0 2px 8px rgba(0,0,0,0.03); }
+    thead{ background:var(--purple); color:#fff; }
+    th,td{ border:1px solid #ececec; padding:10px 8px; text-align:center; font-size:16px; }
+    th:nth-child(1){ width:150px; }
+    th:nth-child(2){ width:220px; text-align:center; }
+    td:nth-child(2){ text-align:left; }
+    .name-cell{
+      font-size:clamp(20px, 2.4vw, 34px);   /* 1) 더 크게 & 셀에 맞게 반응형 */
+      font-weight:800;
+      line-height:1.2;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
 
-/* 환자 이름 */
-.name-cell {
-  font-size: 26px;
-  font-weight: 700;
-  padding: 14px 8px;
-}
+    .status-box{
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      min-height:72px; padding:8px 10px; border-radius:12px; transition:background .2s;
+      cursor:default;
+    }
+    .left-col{ display:flex; align-items:center; gap:12px; }
+    .time-text{ font-weight:900; color:#d9534f; font-size:22px; min-width:66px; text-align:left; }
+    .right-col{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
+    .pill{ display:inline-block; padding:6px 12px; border-radius:999px; font-size:14px; font-weight:800; }
+    .pill-wait{ background:#fff; border:2px solid #ddd; color:#444; }
+    .pill-run{ background:var(--yellow); color:#222; }
+    .pill-done{ background:#ffb6b6; color:#681212; }
 
-/* 버튼 스타일 */
-.mini-btn, .btn-adjust {
-  font-size: 20px;
-  font-weight: 700;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-}
-.mini-btn { padding: 10px 18px; }
-.btn-adjust {
-  width: 44px; height: 44px;
-  border: 2px solid #bbb;
-  font-size: 26px;
-}
+    /* 4) 버튼 대형화 */
+    .mini-btn{ border:none; border-radius:10px; padding:10px 16px; font-size:16px; cursor:pointer; }
+    .mini-start{ background:#0d6efd; color:#fff; }
+    .mini-stop{  background:#ffc107; color:#222; }
 
-.mini-start { background: #007bff; color: white; }
-.mini-stop  { background: #ffca28; color: black; }
+    .adjust-box{ display:flex; gap:8px; }
+    .btn-adjust{
+      background:#fff; border:2px solid #bdbdbd; border-radius:10px;
+      width:48px; height:44px; font-size:24px; line-height:40px; cursor:pointer;
+    }
 
-/* 타이머 표시 */
-.time-text {
-  font-size: 26px;
-  font-weight: 900;
-  color: #d9534f;
-}
+    /* 완료 셀 깜빡임 */
+    @keyframes cellBlink{0%{box-shadow:0 0 0 0 rgba(255,0,0,.22);}50%{box-shadow:0 0 0 12px rgba(255,0,0,.08);}100%{box-shadow:0 0 0 0 rgba(255,0,0,.22);} }
+    .cell-blink{ animation:cellBlink 1s ease-in-out infinite; background:#fff8f8; }
 
-/* 상태 라벨 */
-.pill {
-  padding: 6px 16px;
-  border-radius: 18px;
-  font-size: 18px;
-  font-weight: 700;
-}
-.pill-wait { background: #fafafa; border: 2px solid #ccc; }
-.pill-run  { background: #ffe680; color: #000; }
-.pill-done { background: #ff8a80; color: white; }
+    /* 우측 상단 고정: 간호사 호출 패널 (대형화) */
+    .nurse-panel{
+      position:fixed; top:10px; right:10px; background:rgba(255,255,255,0.98);
+      border:2px solid #dcdcdc; border-radius:999px; padding:10px 14px; box-shadow:0 10px 26px rgba(0,0,0,0.08);
+      display:flex; gap:14px; align-items:center; z-index:1000;
+    }
+    .nurse-label{ font-size:18px; font-weight:900; margin-right:6px; white-space:nowrap; }
+    .btn-call{ border:none; border-radius:999px; padding:10px 18px; font-size:16px; cursor:pointer; background:#f1f3f5; font-weight:800; white-space:nowrap; letter-spacing:.2px; box-shadow:0 2px 6px rgba(0,0,0,0.05); }
+    .btn-call.on{ outline:3px solid #ff4d4f; background:#ffe6e6; }
+    @keyframes blinkBtn{0%{background:#ffe6e6;transform:translateY(0)}50%{background:#ffb3b3;transform:translateY(-1px)}100%{background:#ffe6e6;transform:translateY(0)}}
+    .blink-btn{ animation:blinkBtn .7s ease-in-out infinite; }
 
-/* 완료 깜빡임 */
-@keyframes blinkCell {
-  0% { box-shadow: 0 0 0 0 rgba(255,0,0,.25); }
-  50%{ box-shadow: 0 0 0 14px rgba(255,0,0,.12); }
-  100%{box-shadow: 0 0 0 0 rgba(255,0,0,.25);}
-}
-.cell-blink { animation: blinkCell 1s infinite; background:#fff3f3; }
+    /* 2) 담당 셀 아래 입원/외래 버튼 */
+    .io-group{ display:flex; gap:8px; margin-top:8px; justify-content:center; }
+    .io-btn{
+      border:2px solid #bbb; background:#fff; border-radius:999px; padding:6px 12px; font-size:14px; font-weight:800; cursor:pointer;
+    }
+    .io-btn.active{ background:#222; color:#fff; border-color:#222; }
 
-/* 입원 / 외래 버튼 */
-.visit-btn {
-  font-size: 14px;
-  padding: 4px 8px;
-  border-radius: 6px;
-  border: 1px solid #aaa;
-  cursor: pointer;
-}
-.visit-on { background:#2ecc71;color:white;border-color:#2ecc71; }
-.visit-outon { background:#3498db;color:white;border-color:#3498db; }
-
-/* 추나 O/X 버튼 */
-.chuna-btn {
-  font-size: 26px;
-  font-weight: 900;
-  border: 2px solid #444;
-  border-radius: 10px;
-  width: 55px;
-  height: 55px;
-  cursor: pointer;
-}
-.chuna-on  { background:#2ecc71; color:white; border-color:#27ae60; }
-.chuna-off { background:#ff6b6b; color:white; border-color:#c0392b; }
-
-/* 고정 간호사 호출 패널 */
-.nurse-panel {
-  position: fixed;
-  top: 10px; right: 10px;
-  background: white;
-  border: 2px solid #ddd;
-  border-radius: 30px;
-  padding: 12px 14px;
-  display: flex; gap: 10px;
-  z-index: 9999;
-}
-.btn-call {
-  padding: 10px 20px;
-  font-size: 18px;
-  border-radius: 25px;
-  border: none;
-  background:#f1f3f5;
-  cursor:pointer; font-weight:700;
-}
-.btn-call.on { outline:3px solid #ff4d4f;background:#ffe6e6; }
-@keyframes blinkBtn {0%{background:#ffe6e6;}50%{background:#ffb3b3;}100%{background:#ffe6e6;}}
-.blink-btn { animation: blinkBtn .7s infinite; }
-
-.status-box { display:flex;align-items:center;justify-content:space-between; }
-.left-col, .right-col { display:flex; gap:10px; align-items:center; }
-</style>
+    /* 3) 추나 수동(O/X) 전용 버튼 */
+    .chuna-box{ display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:72px; padding:8px 10px; border-radius:12px; }
+    .ox-group{ display:flex; gap:10px; }
+    .ox-btn{
+      border:none; border-radius:12px; padding:12px 18px; font-size:20px; font-weight:900; cursor:pointer;
+      box-shadow:0 2px 6px rgba(0,0,0,.06);
+    }
+    .ox-on{  background:#00c853; color:#fff; }
+    .ox-off{ background:#e0e0e0; color:#111; }
+  </style>
 </head>
-
 <body>
-<!-- 상단 메뉴 -->
-<div class="topbar">
-  <h2>🏥 치료실 타이머판 (12병상)</h2>
-  <div class="grow"></div>
+  <!-- 상단바 -->
+  <div class="topbar">
+    <h2>🏥 치료실 타이머판 (12병상)</h2>
+    <div class="grow"></div>
 
-  <button id="btnCompleteSound" class="sound-btn on" onclick="toggleCompleteSound()">완료음: ON</button>
-  <button id="btnNurseSound" class="sound-btn on" onclick="toggleNurseSound()">호출음: ON</button>
+    <!-- 완료음 / 호출음 ON·OFF -->
+    <button id="btnCompleteSound" class="sound-btn on" onclick="toggleCompleteSound()">완료음: ON</button>
+    <button id="btnNurseSound"    class="sound-btn on" onclick="toggleNurseSound()">호출음: ON</button>
 
-  <span style="font-weight:700;">수신:</span>
-  <button class="sound-btn" data-dept="대표" onclick="toggleListen('대표')">대표</button>
-  <button class="sound-btn" data-dept="양방" onclick="toggleListen('양방')">양방</button>
-  <button class="sound-btn" data-dept="1과" onclick="toggleListen('1과')">1과</button>
-  <button class="sound-btn" data-dept="2과" onclick="toggleListen('2과')">2과</button>
-  <button class="sound-btn" data-dept="3과" onclick="toggleListen('3과')">3과</button>
+    <!-- 수신 채널 선택 -->
+    <div class="listen-group" style="display:flex;gap:8px;align-items:center;">
+      <span style="font-weight:900;">수신 채널:</span>
+      <button class="sound-btn chan" data-dept="대표" onclick="toggleListen('대표')">대표</button>
+      <button class="sound-btn chan" data-dept="양방" onclick="toggleListen('양방')">양방</button>
+      <button class="sound-btn chan" data-dept="1과" onclick="toggleListen('1과')">1과</button>
+      <button class="sound-btn chan" data-dept="2과" onclick="toggleListen('2과')">2과</button>
+      <button class="sound-btn chan" data-dept="3과" onclick="toggleListen('3과')">3과</button>
+    </div>
 
-  <button class="danger-btn" onclick="resetSettings()">⚙ 초기화</button>
-</div>
+    <!-- 설정 초기화 -->
+    <button class="danger-btn" onclick="resetSettings()">⚙️ 설정 초기화</button>
+  </div>
 
-<!-- 기본시간 -->
-<div style="margin-bottom:10px;">
-  <span style="font-size:18px;">기본 시간(분):</span>
-  <input type="number" id="defaultMinutes" value="10" min="1" style="font-size:20px;padding:8px;width:90px;border-radius:6px;" />
-  <button class="sound-btn" style="background:#007bff;color:white;" onclick="applyDefaultMinutes()">적용</button>
-</div>
+  <!-- 기본 시간 설정 -->
+  <div class="toolbar">
+    <span>기본 시간(분):</span>
+    <input type="number" id="defaultMinutes" value="10" min="1" />
+    <button class="btn btn-apply" onclick="applyDefaultMinutes()">적용</button>
+    <small style="color:#666;">추나는 타이머 대신 O/X로 진행 여부 체크 · 각 칸에서 ＋/− 30초 조정</small>
+  </div>
 
-<!-- 테이블 -->
-<table>
-<thead>
-<tr>
-  <th>담당</th>
-  <th>환자</th>
-  <th>핫팩</th>
-  <th>물리치료</th>
-  <th>침치료</th>
-  <th>추나</th>
-</tr>
-</thead>
-<tbody id="tableBody"></tbody>
-</table>
+  <!-- 메인 테이블 -->
+  <table id="timerTable">
+    <thead>
+      <tr>
+        <th>담당<br><small>입원/외래</small></th>
+        <th>환자이름</th>
+        <th>핫팩</th>
+        <th>물리치료</th>
+        <th>침치료</th>
+        <th>추나(O/X)</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+  </table>
 
-<!-- 간호사 호출 -->
-<div class="nurse-panel">
-  <button class="btn-call" id="call-대표" onclick="toggleCall('대표')">대표</button>
-  <button class="btn-call" id="call-양방" onclick="toggleCall('양방')">양방</button>
-  <button class="btn-call" id="call-1과" onclick="toggleCall('1과')">1과</button>
-  <button class="btn-call" id="call-2과" onclick="toggleCall('2과')">2과</button>
-  <button class="btn-call" id="call-3과" onclick="toggleCall('3과')">3과</button>
-</div>
+  <!-- 우측 상단 고정: 간호사 호출 -->
+  <div class="nurse-panel">
+    <span class="nurse-label">간호사 호출</span>
+    <button class="btn-call" id="call-대표" onclick="toggleCall('대표')">대표</button>
+    <button class="btn-call" id="call-양방" onclick="toggleCall('양방')">양방</button>
+    <button class="btn-call" id="call-1과" onclick="toggleCall('1과')">1과</button>
+    <button class="btn-call" id="call-2과" onclick="toggleCall('2과')">2과</button>
+    <button class="btn-call" id="call-3과" onclick="toggleCall('3과')">3과</button>
+  </div>
 
-<audio id="beep" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"></audio>
+  <!-- 짧은 비프(공용) -->
+  <audio id="beep" preload="auto" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"></audio>
 
-<!-- ✅ 전체 JS -->
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
-import { getDatabase, ref, set, update, onValue, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js";
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+    import { getDatabase, ref, set, update, onValue, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js";
 
-/* Firebase 설정 */
-const firebaseConfig = {
-  apiKey: "AIzaSyCDPfyuS-lXHkkmbHEkE2sqFBkBvb_zhVg",
-  authDomain: "treatment-timer.firebaseapp.com",
-  databaseURL: "https://treatment-timer-default-rtdb.asia-southeast1.firebasedatabase.app/",
-  projectId: "treatment-timer",
-  storageBucket: "treatment-timer.firebasestorage.app",
-  messagingSenderId: "723002106763",
-  appId: "1:723002106763:web:0b6aa89d5c42acc2f0458e",
-  measurementId: "G-VV9B5R5EZL"
-};
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
+    /* ===== Firebase ===== */
+    const firebaseConfig = {
+      apiKey: "AIzaSyCDPfyuS-lXHkkmbHEkE2sqFBkBvb_zhVg",
+      authDomain: "treatment-timer.firebaseapp.com",
+      databaseURL: "https://treatment-timer-default-rtdb.asia-southeast1.firebasedatabase.app/",
+      projectId: "treatment-timer",
+      storageBucket: "treatment-timer.firebasestorage.app",
+      messagingSenderId: "723002106763",
+      appId: "1:723002106763:web:0b6aa89d5c42acc2f0458e",
+      measurementId: "G-VV9B5R5EZL"
+    };
+    const app = initializeApp(firebaseConfig);
+    const db  = getDatabase(app);
 
-/* 설정 */
-let DEFAULT_MINUTES = 10;
-const ROW_COUNT = 12;
-const COLS = ["핫팩","물리치료","침치료"];
-const ROOM = "rooms/default";
+    /* ===== 상수/상태 ===== */
+    let DEFAULT_MINUTES = 10;
+    const ROW_COUNT = 12;
+    const COLS = ["핫팩","물리치료","침치료"];     // 3) 추나는 타이머 제외
+    const ROOM = "rooms/default";
+    const deptColors = {"":"", "대표":"var(--dept-rep)", "양방":"var(--dept-west)", "1과":"var(--dept-1)", "2과":"var(--dept-2)", "3과":"var(--dept-3)"};
 
-/* local 설정 */
-let completeSoundOn = JSON.parse(localStorage.getItem("completeSoundOn")||"true");
-let nurseSoundOn = JSON.parse(localStorage.getItem("nurseSoundOn")||"true");
-let listenChannels = JSON.parse(localStorage.getItem("listenChannels")||"{}");
-["대표","양방","1과","2과","3과"].forEach(d=>{ if(typeof listenChannels[d]!="boolean") listenChannels[d]=false; });
+    const intervals = {};
+    const lastCallState = {"대표":false,"양방":false,"1과":false,"2과":false,"3과":false};
+    const nurseBeepTimers = {};
+    const nurseStopTimers  = {};
 
-function saveLocal(){ localStorage.setItem("listenChannels",JSON.stringify(listenChannels)); localStorage.setItem("completeSoundOn",completeSoundOn); localStorage.setItem("nurseSoundOn",nurseSoundOn); }
+    const beep = document.getElementById('beep');
 
-/* UI state */
-function applySoundButtons(){
-  const c = document.getElementById("btnCompleteSound");
-  const n = document.getElementById("btnNurseSound");
-  c.classList.toggle("on", completeSoundOn);
-  n.classList.toggle("on", nurseSoundOn);
-  c.classList.toggle("off", !completeSoundOn);
-  n.classList.toggle("off", !nurseSoundOn);
-  c.textContent = `완료음: ${completeSoundOn?"ON":"OFF"}`;
-  n.textContent = `호출음: ${nurseSoundOn?"ON":"OFF"}`;
-}
-applySoundButtons();
+    /* ===== 로컬 저장 ===== */
+    let completeSoundOn = JSON.parse(localStorage.getItem('completeSoundOn') || 'true');
+    let nurseSoundOn    = JSON.parse(localStorage.getItem('nurseSoundOn')    || 'true');
+    let listenChannels  = JSON.parse(localStorage.getItem('listenChannels')  || '{}');
+    ["대표","양방","1과","2과","3과"].forEach(d => { if (typeof listenChannels[d] !== 'boolean') listenChannels[d] = false; });
 
-function toggleCompleteSound(){ completeSoundOn=!completeSoundOn; saveLocal(); applySoundButtons(); }
-function toggleNurseSound(){ nurseSoundOn=!nurseSoundOn; saveLocal(); applySoundButtons(); }
-window.toggleCompleteSound = toggleCompleteSound;
-window.toggleNurseSound = toggleNurseSound;
+    function saveCompleteSound(){ localStorage.setItem('completeSoundOn', JSON.stringify(completeSoundOn)); }
+    function saveNurseSound(){    localStorage.setItem('nurseSoundOn',    JSON.stringify(nurseSoundOn)); }
+    function saveListen(){        localStorage.setItem('listenChannels',  JSON.stringify(listenChannels)); applyListenUI(); }
 
-function toggleListen(dept){
-  listenChannels[dept] = !listenChannels[dept];
-  saveLocal();
-  document.querySelector(`[data-dept="${dept}"]`).classList.toggle("on", listenChannels[dept]);
-}
-window.toggleListen = toggleListen;
+    /* URL 파라미터로 초기 채널 지정: ?listen=1과,2과 */
+    (function applyListenFromQuery(){
+      const params = new URLSearchParams(location.search);
+      const list = params.get('listen');
+      if (list){
+        const items = list.split(',').map(s => s.trim());
+        ["대표","양방","1과","2과","3과"].forEach(d => listenChannels[d] = items.includes(d));
+        saveListen();
+      } else {
+        applyListenUI();
+      }
+    })();
 
-function resetSettings(){ localStorage.clear(); location.reload(); }
-window.resetSettings = resetSettings;
+    /* 버튼 상태 반영 */
+    function applyListenUI(){
+      ["대표","양방","1과","2과","3과"].forEach(d => {
+        const btn = document.querySelector(`.sound-btn.chan[data-dept="${d}"]`);
+        if (btn) btn.classList.toggle('on', !!listenChannels[d]);
+      });
+    }
+    function applySoundButtons(){
+      const b1 = document.getElementById('btnCompleteSound');
+      const b2 = document.getElementById('btnNurseSound');
+      if (b1) { b1.classList.toggle('on',  completeSoundOn); b1.classList.toggle('off', !completeSoundOn); b1.textContent = `완료음: ${completeSoundOn?'ON':'OFF'}`; }
+      if (b2) { b2.classList.toggle('on',  nurseSoundOn);    b2.classList.toggle('off', !nurseSoundOn);    b2.textContent = `호출음: ${nurseSoundOn?'ON':'OFF'}`; }
+    }
+    applySoundButtons();
 
-window.applyDefaultMinutes = ()=>{
-  const v = parseInt(document.getElementById("defaultMinutes").value);
-  if(!isNaN(v)&&v>0) DEFAULT_MINUTES=v;
-};
-
-/* UI build */
-function buildTable(){
-  const tbody = document.getElementById("tableBody");
-  for(let i=1;i<=ROW_COUNT;i++){
-    const tr=document.createElement("tr"); tr.id=`row-${i}`;
-
-    /* 담당 */
-    const docTd=document.createElement("td");
-    docTd.innerHTML=`
-      <div style="display:flex;flex-direction:column;gap:3px;align-items:center;">
-        <select id="doc-${i}" style="font-size:18px;padding:4px;" onchange="changeDoctor(${i},this.value)">
-          <option value="">선택</option>
-          <option value="대표">대표</option>
-          <option value="양방">양방</option>
-          <option value="1과">1과</option>
-          <option value="2과">2과</option>
-          <option value="3과">3과</option>
-        </select>
-        <div style="display:flex;gap:4px;">
-          <button id="in-${i}" class="visit-btn" onclick="setVisitType(${i},'입원')">입원</button>
-          <button id="out-${i}" class="visit-btn" onclick="setVisitType(${i},'외래')">외래</button>
-        </div>
-      </div>`;
-    tr.appendChild(docTd);
-
-    /* 이름 */
-    const nameTd=document.createElement("td");
-    nameTd.className="name-cell";
-    nameTd.textContent = `<${i}번>`;
-    nameTd.contentEditable = true;
-    nameTd.onblur=()=>update(ref(db,`${ROOM}/rows/${i}`),{name:nameTd.textContent});
-    tr.appendChild(nameTd);
-
-    /* 3개 타이머 컬럼 */
-    COLS.forEach((col,j)=>{
-      const key=`r${i}_c${j}`;
-      const td=document.createElement("td");
-      td.innerHTML=`
-      <div class="status-box" id="box-${key}" onclick="resetDone('${key}')">
-        <div class="left-col">
-          <span class="time-text" id="time-${key}"></span>
-        </div>
-        <div class="right-col">
-          <span class="pill pill-wait" id="status-${key}">대기</span>
-          <button class="btn-adjust" onclick="adjustTime('${key}',30);event.stopPropagation();">+</button>
-          <button class="btn-adjust" onclick="adjustTime('${key}',-30);event.stopPropagation();">-</button>
-          <button class="mini-btn mini-start" onclick="startTimer('${key}','${col}');event.stopPropagation();">진행</button>
-          <button class="mini-btn mini-stop" onclick="stopTimer('${key}');event.stopPropagation();">중지</button>
-        </div>
-      </div>`;
-      tr.appendChild(td);
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'listenChannels') {
+        listenChannels = JSON.parse(e.newValue || '{}'); applyListenUI();
+      }
+      if (e.key === 'completeSoundOn') {
+        completeSoundOn = JSON.parse(e.newValue || 'true'); applySoundButtons();
+      }
+      if (e.key === 'nurseSoundOn') {
+        nurseSoundOn = JSON.parse(e.newValue || 'true'); applySoundButtons();
+      }
     });
 
-    /* 추나 O/X */
-    const cTd=document.createElement("td");
-    cTd.innerHTML=`
-      <button id="chuna-${i}" class="chuna-btn chuna-off" onclick="toggleChuna(${i})">X</button>
-    `;
-    tr.appendChild(cTd);
+    /* ===== 상단바 동작 ===== */
+    window.toggleCompleteSound = () => { completeSoundOn = !completeSoundOn; saveCompleteSound(); applySoundButtons(); };
+    window.toggleNurseSound    = () => { nurseSoundOn    = !nurseSoundOn;    saveNurseSound();    applySoundButtons(); if (!nurseSoundOn) stopAllNurseBeeps(); };
+    window.toggleListen = (dept) => { listenChannels[dept] = !listenChannels[dept]; saveListen(); };
 
-    tbody.appendChild(tr);
-  }
-}
-buildTable();
+    window.resetSettings = () => {
+      if (confirm("설정을 모두 초기화하시겠습니까?")) {
+        localStorage.clear();
+        alert("설정이 초기화되었습니다.");
+        location.reload();
+      }
+    };
 
-/* Firebase sync */
-window.changeDoctor = (i,dept)=>update(ref(db,`${ROOM}/rows/${i}`),{dept});
-window.setVisitType = (i,type)=>update(ref(db,`${ROOM}/rows/${i}`),{visitType:type});
+    /* ===== 기본 시간 ===== */
+    window.applyDefaultMinutes = () => {
+      const v = parseInt(document.getElementById("defaultMinutes").value);
+      if (!isNaN(v) && v > 0) { DEFAULT_MINUTES = v; alert(`기본 시간 ${v}분으로 설정되었습니다.`); }
+    };
 
-/* 추나 O/X */
-window.toggleChuna = (i)=>{
-  const el=document.getElementById(`chuna-${i}`);
-  const now=el.textContent==="O"?"X":"O";
-  el.textContent=now;
-  el.classList.toggle("chuna-on", now==="O");
-  el.classList.toggle("chuna-off", now==="X");
-  update(ref(db,`${ROOM}/rows/${i}`),{chuna:now});
-};
+    /* ===== 담당/입원·외래 변경 ===== */
+    window.changeDoctor = (rowIndex, dept) => {
+      update(ref(db, `${ROOM}/rows/${rowIndex}`), { dept });
+      const tr = document.getElementById("row-"+rowIndex);
+      if (tr) tr.style.background = deptColors[dept] || "";
+    };
+    window.setInOut = (rowIndex, type) => {
+      update(ref(db, `${ROOM}/rows/${rowIndex}`), { inout:type });
+    };
 
-/* 타이머 */
-window.startTimer = (key,col)=>{
-  const base = (col==="추나")?0:DEFAULT_MINUTES;
-  onValue(ref(db,`${ROOM}/timers/${key}`),(snap)=>{
-    const v=snap.val()||{};
-    const remain = (v.remaining>0)?v.remaining:(base*60);
-    update(ref(db,`${ROOM}/timers/${key}`),{status:"진행",endAt:Date.now()+remain*1000});
-  },{onlyOnce:true});
-};
+    /* ===== 타이머 (핫팩/물리/침) ===== */
+    window.startTimer = (key, colName) => {
+      const baseMin = DEFAULT_MINUTES; // 추나는 타이머 제외
+      const tRef = ref(db, `${ROOM}/timers/${key}`);
+      update(tRef, { colName, status: "진행" });
+      onValue(tRef, (snap) => {
+        const v = snap.val() || {};
+        const now = Date.now();
+        const remainMs = (typeof v.remaining === "number" && v.remaining > 0)
+          ? v.remaining * 1000
+          : baseMin * 60 * 1000;
+        update(tRef, { endAt: now + remainMs, status: "진행" });
+      }, { onlyOnce: true });
+    };
 
-window.stopTimer = (key)=>{
-  update(ref(db,`${ROOM}/timers/${key}`),{status:"대기",endAt:null,remaining:0});
-};
+    window.stopTimer = (key) => {
+      const tRef = ref(db, `${ROOM}/timers/${key}`);
+      update(tRef, { status: "대기", endAt: null, remaining: 0 });
+      const box = document.getElementById("box-"+key);
+      if (box) box.classList.remove("cell-blink");
+    };
 
-window.resetDone = (key)=>{
-  const st=document.getElementById(`status-${key}`);
-  if(st.textContent==="완료") stopTimer(key);
-};
+    window.resetIfDone = (key) => {
+      const st = document.getElementById("status-"+key);
+      if (st && st.textContent === "완료") stopTimer(key);
+    };
 
-window.adjustTime = (key,sec)=>{
-  onValue(ref(db,`${ROOM}/timers/${key}`),(snap)=>{
-    const v=snap.val()||{};
-    if(v.status==="진행"&&v.endAt){
-      update(ref(db,`${ROOM}/timers/${key}`),{endAt:v.endAt+(sec*1000)});
-    } else {
-      const base=v.remaining||(DEFAULT_MINUTES*60);
-      const newSec=Math.max(30,base+sec);
-      update(ref(db,`${ROOM}/timers/${key}`),{remaining:newSec});
-    }
-  },{onlyOnce:true});
-};
-
-/* 간호사 호출 */
-window.toggleCall = (dept)=>{
-  onValue(ref(db,`${ROOM}/nurseCalls/${dept}`),(snap)=>{
-    const next=!(snap.val()&&snap.val().on);
-    set(ref(db,`${ROOM}/nurseCalls/${dept}`),{on:next,at:serverTimestamp()});
-  },{onlyOnce:true});
-};
-
-function beepOnce(){ const b=document.getElementById("beep"); try{b.currentTime=0;b.play();}catch{} }
-function play10(){ if(!completeSoundOn) return; let c=0; const i=setInterval(()=>{beepOnce(); if(++c>=10)clearInterval(i);},1000); }
-
-/* Firebase events */
-onValue(ref(db,`${ROOM}/rows`),(snap)=>{
-  const rows=snap.val()||{};
-  for(let i=1;i<=ROW_COUNT;i++){
-    const r=rows[i]||{};
-    const name=document.querySelector(`#row-${i} td.name-cell`);
-    if(r.name) name.textContent=r.name;
-
-    const sel=document.getElementById(`doc-${i}`);
-    if(r.dept && sel.value!==r.dept) sel.value=r.dept;
-
-    const inB=document.getElementById(`in-${i}`);
-    const outB=document.getElementById(`out-${i}`);
-    if(r.visitType==="입원"){ inB.classList.add("visit-on"); outB.classList.remove("visit-outon"); }
-    else if(r.visitType==="외래"){ outB.classList.add("visit-outon"); inB.classList.remove("visit-on"); }
-    else { inB.classList.remove("visit-on"); outB.classList.remove("visit-outon"); }
-
-    const chu=document.getElementById(`chuna-${i}`);
-    if(r.chuna==="O"){ chu.textContent="O"; chu.classList.add("chuna-on"); chu.classList.remove("chuna-off"); }
-    else { chu.textContent="X"; chu.classList.add("chuna-off"); chu.classList.remove("chuna-on"); }
-  }
-});
-
-onValue(ref(db,`${ROOM}/timers`),(snap)=>{
-  const t=snap.val()||{};
-  Object.entries(t).forEach(([key,v])=>{
-    const st=document.getElementById(`status-${key}`);
-    const tt=document.getElementById(`time-${key}`);
-    const box=document.getElementById(`box-${key}`);
-    if(!st||!tt||!box) return;
-
-    if(v.status==="진행"&&v.endAt){
-      const run=()=>{
-        const remain=Math.max(0,Math.floor((v.endAt-Date.now())/1000));
-        tt.textContent=`${String(Math.floor(remain/60)).padStart(2,"0")}:${String(remain%60).padStart(2,"0")}`;
-        if(remain<=0){
-          st.textContent="완료";
-          st.className="pill pill-done";
-          box.classList.add("cell-blink");
-          tt.textContent="";
-          play10();
-          update(ref(db,`${ROOM}/timers/${key}`),{status:"완료",endAt:null,remaining:0});
-          clearInterval(window[`_i_${key}`]);
+    // 30초 증감
+    window.adjustTime = (key, diffSec) => {
+      const tRef = ref(db, `${ROOM}/timers/${key}`);
+      onValue(tRef, (snap) => {
+        const v = snap.val() || {};
+        const diffMs = diffSec * 1000;
+        if (v.status === "진행" && v.endAt) {
+          update(tRef, { endAt: v.endAt + diffMs });
+        } else {
+          const base = DEFAULT_MINUTES;
+          const curSec = (typeof v.remaining === "number" && v.remaining > 0) ? v.remaining : base * 60;
+          const nxtSec = Math.max(30, curSec + diffSec);
+          update(tRef, { remaining: nxtSec });
         }
-      };
-      run();
-      clearInterval(window[`_i_${key}`]);
-      window[`_i_${key}`]=setInterval(run,250);
-      st.textContent="진행"; st.className="pill pill-run"; box.classList.remove("cell-blink");
-    } else if(v.status==="대기"){
-      st.textContent="대기"; st.className="pill pill-wait"; box.classList.remove("cell-blink");
-      tt.textContent=v.remaining?`${String(Math.floor(v.remaining/60)).padStart(2,"0")}:${String(v.remaining%60).padStart(2,"0")}`:"";
-    }
-  });
-});
+      }, { onlyOnce: true });
+    };
 
-/* 호출음 */
-onValue(ref(db,`${ROOM}/nurseCalls`),(snap)=>{
-  const c=snap.val()||{};
-  ["대표","양방","1과","2과","3과"].forEach(dept=>{
-    const btn=document.getElementById(`call-${dept}`);
-    const on=c[dept]&&c[dept].on;
-    btn.classList.toggle("on",on);
-    btn.classList.toggle("blink-btn",on);
+    /* ===== 추나 수동(O/X) ===== */
+    window.toggleChuna = (key, on) => {
+      set(ref(db, `${ROOM}/chuna/${key}`), { on, at: serverTimestamp() });
+    };
 
-    if(on && nurseSoundOn && listenChannels[dept]){
-      beepOnce();
-      const int=setInterval(()=>{if(nurseSoundOn && listenChannels[dept]) beepOnce();},1000);
-      setTimeout(()=>clearInterval(int),10000);
+    /* ===== 간호사 호출 ===== */
+    window.toggleCall = (dept) => {
+      const cRef = ref(db, `${ROOM}/nurseCalls/${dept}`);
+      onValue(cRef, (snap) => {
+        const next = !(snap.val() && snap.val().on);
+        set(cRef, { on: next, at: serverTimestamp() });
+      }, { onlyOnce: true });
+    };
+
+    function playBeepOnce(){
+      try{ beep.currentTime = 0; beep.play(); } catch(e){}
     }
-  });
-});
-</script>
+    function playBeepFor10Sec_Complete(){
+      if (!completeSoundOn) return;
+      let count = 0;
+      const doBeep = () => { try{ beep.currentTime = 0; beep.play(); } catch(e){} };
+      doBeep();
+      const intv = setInterval(()=>{
+        count++;
+        if (count >= 9) { clearInterval(intv); return; } // 총 10회
+        doBeep();
+      }, 1000);
+    }
+
+    function startNurseBeep(dept){
+      if (nurseBeepTimers[dept]) clearInterval(nurseBeepTimers[dept]);
+      if (nurseStopTimers[dept])  clearTimeout(nurseStopTimers[dept]);
+
+      const doBeep = ()=>{ if (nurseSoundOn && listenChannels[dept]) playBeepOnce(); };
+      doBeep();
+      nurseBeepTimers[dept] = setInterval(doBeep, 1000);
+      nurseStopTimers[dept]  = setTimeout(()=> stopNurseBeep(dept), 10000);
+    }
+    function stopNurseBeep(dept){
+      if (nurseBeepTimers[dept]){ clearInterval(nurseBeepTimers[dept]); nurseBeepTimers[dept]=null; }
+      if (nurseStopTimers[dept]) { clearTimeout(nurseStopTimers[dept]); nurseStopTimers[dept]=null; }
+    }
+    function stopAllNurseBeeps(){ ["대표","양방","1과","2과","3과"].forEach(stopNurseBeep); }
+
+    /* ===== 데이터 구독 ===== */
+    onValue(ref(db, `${ROOM}/rows`), (snap) => {
+      const rows = snap.val() || {};
+      for (let i=1;i<=ROW_COUNT;i++){
+        const r  = rows[i] || {};
+        const tr = document.getElementById("row-"+i);
+        if (!tr) continue;
+
+        const sel = tr.querySelector("select.doctor");
+        if (sel && sel.value !== (r.dept||"")) sel.value = r.dept||"";
+        tr.style.background = deptColors[r.dept||""] || "";
+
+        const inBtn  = tr.querySelector(".io-btn[data-type='입원']");
+        const outBtn = tr.querySelector(".io-btn[data-type='외래']");
+        if (inBtn && outBtn){
+          inBtn.classList.toggle("active", r.inout === "입원");
+          outBtn.classList.toggle("active", r.inout === "외래");
+        }
+
+        const nameTd = tr.children[1];
+        if (r.name && nameTd.textContent !== r.name) nameTd.textContent = r.name;
+      }
+    });
+
+    onValue(ref(db, `${ROOM}/timers`), (snap) => {
+      const timers = snap.val() || {};
+      Object.entries(timers).forEach(([key, v]) => {
+        const st = document.getElementById("status-"+key);
+        const tt = document.getElementById("time-"+key);
+        const box = document.getElementById("box-"+key);
+        if (!st || !tt || !box) return;
+
+        const status = v.status || "대기";
+        st.textContent = status;
+        st.className = "pill " + (status==="진행" ? "pill-run" : status==="완료" ? "pill-done" : "pill-wait");
+
+        box.classList.remove("cell-blink");
+        if (intervals[key]) { clearInterval(intervals[key]); intervals[key]=null; }
+
+        if (status === "진행" && v.endAt){
+          const tick = () => {
+            const remain = Math.max(0, Math.floor((v.endAt - Date.now())/1000));
+            tt.textContent = fmt(remain);
+            if (remain <= 0){
+              clearInterval(intervals[key]); intervals[key]=null;
+              st.textContent = "완료"; st.className = "pill pill-done";
+              tt.textContent = "";
+              box.classList.add("cell-blink");
+              /* 완료 10초 비프 */
+              playBeepFor10Sec_Complete();
+              update(ref(db, `${ROOM}/timers/${key}`), { status: "완료", endAt: null, remaining: 0 });
+            }
+          };
+          tick();
+          intervals[key] = setInterval(tick, 250);
+        } else {
+          const base = DEFAULT_MINUTES;
+          const remain = (typeof v.remaining === "number" && v.remaining>0) ? v.remaining : (status==="완료"?0:base*60);
+          tt.textContent = remain>0 ? fmt(remain) : "";
+          if (status === "완료") box.classList.add("cell-blink");
+        }
+      });
+    });
+
+    onValue(ref(db, `${ROOM}/chuna`), (snap) => {
+      const data = snap.val() || {};
+      for (let i=1;i<=ROW_COUNT;i++){
+        const key = `r${i}_c3`;
+        const on = !!(data[key] && data[key].on);
+        const st = document.getElementById("status-"+key);
+        const oBtn = document.getElementById("ox-on-"+key);
+        const xBtn = document.getElementById("ox-off-"+key);
+        if (st) st.textContent = on ? "진행" : "대기";
+        if (st) st.className = "pill " + (on ? "pill-run" : "pill-wait");
+        if (oBtn) oBtn.classList.toggle("ox-on", on);
+        if (xBtn) xBtn.classList.toggle("ox-on", !on);
+      }
+    });
+
+    function fmt(sec){ const m=Math.floor(sec/60), s=sec%60; return `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`; }
+
+    /* ===== 테이블 생성 ===== */
+    function buildTable(){
+      const tbody = document.getElementById("tableBody");
+      for(let i=1;i<=ROW_COUNT;i++){
+        const tr = document.createElement("tr"); tr.id = "row-"+i;
+
+        const docTd = document.createElement("td");
+        docTd.innerHTML = `
+          <div>
+            <select class="doctor" style="width:100%;padding:8px 10px;font-size:16px;border-radius:8px;"
+              onchange="changeDoctor(${i}, this.value)">
+              <option value="">선택</option>
+              <option value="대표">대표</option>
+              <option value="양방">양방</option>
+              <option value="1과">1과</option>
+              <option value="2과">2과</option>
+              <option value="3과">3과</option>
+            </select>
+            <div class="io-group">
+              <button class="io-btn" data-type="입원" onclick="setInOut(${i}, '입원')">입원</button>
+              <button class="io-btn" data-type="외래" onclick="setInOut(${i}, '외래')">외래</button>
+            </div>
+          </div>`;
+        tr.appendChild(docTd);
+
+        const nameTd = document.createElement("td");
+        nameTd.className = "name-cell";
+        nameTd.textContent = `<${i}번 베드>`;
+        nameTd.contentEditable = true;
+        nameTd.addEventListener("blur", () => {
+          update(ref(db, `${ROOM}/rows/${i}`), { name: nameTd.textContent });
+        });
+        tr.appendChild(nameTd);
+
+        /* 타이머 3종 (핫팩/물리/침) */
+        COLS.forEach((colName, j) => {
+          const key = `r${i}_c${j}`;
+          const td  = document.createElement("td");
+          td.innerHTML = `
+            <div class="status-box" id="box-${key}" onclick="resetIfDone('${key}')">
+              <div class="left-col">
+                <span class="time-text" id="time-${key}"></span>
+              </div>
+              <div class="right-col">
+                <span class="pill pill-wait" id="status-${key}">대기</span>
+                <div class="adjust-box">
+                  <button class="btn-adjust" onclick="adjustTime('${key}', 30); event.stopPropagation();">＋</button>
+                  <button class="btn-adjust" onclick="adjustTime('${key}',-30); event.stopPropagation();">−</button>
+                </div>
+                <button class="mini-btn mini-start" onclick="startTimer('${key}', '${colName}'); event.stopPropagation();">진행</button>
+                <button class="mini-btn mini-stop"  onclick="stopTimer('${key}'); event.stopPropagation();">중지</button>
+              </div>
+            </div>`;
+          tr.appendChild(td);
+        });
+
+        /* 추나: 수동 O/X */
+        const chunaKey = `r${i}_c3`;
+        const chunaTd  = document.createElement("td");
+        chunaTd.innerHTML = `
+          <div class="chuna-box" id="box-${chunaKey}">
+            <div class="left-col">
+              <span class="pill pill-wait" id="status-${chunaKey}">대기</span>
+            </div>
+            <div class="ox-group">
+              <button class="ox-btn ox-on"  id="ox-on-${chunaKey}"  onclick="toggleChuna('${chunaKey}', true)">O</button>
+              <button class="ox-btn ox-off" id="ox-off-${chunaKey}" onclick="toggleChuna('${chunaKey}', false)">X</button>
+            </div>
+          </div>`;
+        tr.appendChild(chunaTd);
+
+        tbody.appendChild(tr);
+      }
+    }
+
+    /* 초기 UI 반영 후 테이블 생성 */
+    applyListenUI();
+    buildTable();
+
+    /* 간호사 호출 실시간 반영 */
+    onValue(ref(db, `${ROOM}/nurseCalls`), (snap) => {
+      const c = snap.val() || {};
+      ["대표","양방","1과","2과","3과"].forEach(dept=>{
+        const btn = document.getElementById("call-"+dept);
+        const on  = !!(c[dept] && c[dept].on);
+        btn.classList.toggle("on", on);
+        btn.classList.toggle("blink-btn", on);
+
+        if (on && !lastCallState[dept]) {
+          startNurseBeep(dept);
+        } else if (!on && lastCallState[dept]) {
+          stopNurseBeep(dept);
+        }
+        lastCallState[dept] = on;
+      });
+    });
+  </script>
 </body>
 </html>
