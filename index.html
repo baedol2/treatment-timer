@@ -5,6 +5,14 @@
   <title>치료실 타이머 보드 v3.2 (큰 버튼/큰 시간 표시)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
+
+/* touch/mouse 공통 제스처 최적화(비침해) */
+button, .btn, [role="button"], .role-chip, .pill, .status-box {
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
     :root{
       --purple:#4b0082;
       --yellow:#ffe08a;
@@ -143,10 +151,7 @@
     /* 조금 더 높이 확보: 행 높이 여백 */
     tbody > tr > td { padding:8px; }
   </style>
-<style>
-/* touch/mouse 공통 제스처 최적화 */
-button, .btn { touch-action: manipulation; }
-</style></head>
+</head>
 <body>
   <div class="topbar">
     <h2>🏥 치료실 타이머판 (큰 버튼/큰 시간)</h2>
@@ -563,40 +568,32 @@ button, .btn { touch-action: manipulation; }
   </script>
 
 <script>
-/* 터치/마우스 공통: '첫 이벤트만 허용' 중복(합성 click 등)은 350ms 내 차단 */
+// 함수 호출 가드: 같은 핸들러가 250ms 내 중복 호출되는 것을 1회로 제한
 (function(){
-  var THRESHOLD = 350; // ms
-  var lastTsMap = new WeakMap();
+  var MIN_INTERVAL = 250;
+  var _lastCall = Object.create(null);
 
-  function closestActivatable(el){
-    while (el && el !== document && el.nodeType === 1){
-      var tag = el.tagName;
-      if (tag === 'BUTTON' || tag === 'A' || el.getAttribute('role') === 'button' || (el.classList && el.classList.contains('btn'))){
-        return el;
-      }
-      el = el.parentElement;
-    }
-    return null;
+  function wrapGuard(fnName){
+    try {
+      var fn = window[fnName];
+      if (typeof fn !== 'function') return;
+      if (fn.__wrapped__) return;
+      var wrapped = function(){
+        var now = Date.now();
+        var last = _lastCall[fnName] || 0;
+        if (now - last < MIN_INTERVAL) return; // 중복 방지
+        _lastCall[fnName] = now;
+        return fn.apply(this, arguments);
+      };
+      wrapped.__wrapped__ = true;
+      window[fnName] = wrapped;
+    } catch(_) {}
   }
 
-  function maybeDedup(e){
-    try{
-      var t = closestActivatable(e.target);
-      if (!t) return;
-      var now = Date.now();
-      var last = lastTsMap.get(t) || 0;
-      if (now - last < THRESHOLD){
-        e.preventDefault && e.preventDefault();
-        e.stopPropagation && e.stopPropagation();
-        return false;
-      }
-      lastTsMap.set(t, now);
-    }catch(_){}
-  }
-
-  ['pointerup','click','touchend'].forEach(function(type){
-    window.addEventListener(type, maybeDedup, { capture:true, passive:false });
-  });
+  // 본 파일에 존재하는 클릭 핸들러 함수들을 래핑 (존재하는 경우만 안전하게 적용)
+  ['startTimer','stopTimer','adjustTime','applyDefaultMinutes','setInOut','setRole',
+   'toggleChuna','toggleListen','toggleNurseSound','toggleCompleteSound','toggleCall',
+   'resetSettings','resetIfDone','switchFloor'].forEach(wrapGuard);
 })();
 </script>
 
