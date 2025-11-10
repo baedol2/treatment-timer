@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>치료실 타이머 보드 v3.8 (제목 아래 호출 UI·5초 호출음·2단계 터치)</title>
+  <title>치료실 타이머 보드 v3.9 (호출 UI 스티키·5초 호출음·2단계 터치)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root{
@@ -24,7 +24,11 @@
     }
 
     h2{margin:0 0 8px; display:inline-block;}
-    .topbar{ display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin-bottom:12px; }
+
+    /* 상단 컨트롤 바 */
+    .topbar{
+      display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin-bottom:12px;
+    }
     .grow{ flex:1 1 auto; }
 
     .sound-btn{
@@ -82,15 +86,22 @@
     @keyframes cellBlink{0%{box-shadow:0 0 0 0 rgba(255,0,0,.22);}50%{box-shadow:0 0 0 18px rgba(255,0,0,.08);}100%{box-shadow:0 0 0 0 rgba(255,0,0,.22);} }
     .cell-blink{ animation:cellBlink 1s ease-in-out infinite; background:#fff8f8; }
 
-    /* ===== 호출 UI: 제목 아래 한 줄 (확대 버전) ===== */
+    /* ===== 호출 UI: 제목 아래 한 줄 (확대 + 스티키) ===== */
+    .call-sticky{
+      position: sticky;
+      top: 0;                     /* 화면 맨 위에 고정 */
+      z-index: 1000;
+      padding: 6px 0;
+      background: rgba(245,247,251,0.96); /* 배경 살짝 불투명 */
+      backdrop-filter: blur(3px);
+      border-bottom: 1px solid #e8ecf3;
+    }
     .call-inline{
       width:100%;
       display:flex;
       flex-wrap:wrap;
       gap:14px 22px;
       align-items:center;
-      margin-top:4px;
-      margin-bottom:8px;
     }
     .call-group{
       display:flex; align-items:center; gap:10px; padding:10px 12px; background:#fff; border-radius:14px;
@@ -100,12 +111,12 @@
     .call-label{ margin-right:2px; color:#444; font-size:16px; }
     .btn-call{
       border:none; border-radius:999px;
-      padding:12px 14px;              /* ↑ 더 큼 */
-      font-size:18px;                  /* ↑ 더 큼 */
+      padding:12px 14px;
+      font-size:18px;
       cursor:pointer; background:#f1f3f5; font-weight:900;
       box-shadow:0 2px 6px rgba(0,0,0,0.10);
       line-height:1;
-      min-width:48px;                  /* ↑ 더 큼 */
+      min-width:48px;
     }
     .btn-call.on{ outline:3px solid #ff4d4f; background:#ffe6e6; }
     .btn-call[disabled]{ opacity:.45; cursor:not-allowed; }
@@ -123,9 +134,12 @@
   </style>
 </head>
 <body>
-  <div class="topbar">
-    <h2>🏥 치료실 타이머판</h2>
-    <div class="call-inline" style="width:100%;">
+  <!-- 제목 -->
+  <h2>🏥 치료실 타이머판</h2>
+
+  <!-- 제목 아래: 스크롤 고정 호출 UI -->
+  <div class="call-sticky">
+    <div class="call-inline">
       <div class="call-group">
         <span class="call-label">1층:</span>
         <button class="btn-call" id="call-1F-1과" title="1층-1과" onclick="toggleCall('1F','1과')">1</button>
@@ -143,7 +157,10 @@
         <button class="btn-call" id="call-2F-양방" title="2층-양방" onclick="toggleCall('2F','양방')">양</button>
       </div>
     </div>
+  </div>
 
+  <!-- 상단 컨트롤(층/역할/사운드/채널/설정) -->
+  <div class="topbar">
     <div class="grow"></div>
 
     <div style="display:flex;gap:8px;align-items:center;">
