@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>치료실 타이머 보드 v3.10 (호출 UI 스티키·5초 호출음·2단계 터치)</title>
+  <title>치료실 타이머 보드 v3.12 (담당 미선택 시 시간·버튼 숨김)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root{
@@ -86,12 +86,21 @@
     .pill-run{ background:var(--yellow); color:#222; }
     .pill-done{ background:#ffb6b6; color:#681212; }
 
-    .mini-btn{ border:none; border-radius:16px; padding:18px 22px; font-size:28px; font-weight:900; cursor:pointer; width:100%; height:72px; }
+    /* ✅ 진행/중지 버튼 크게 (추나 수준) */
+    .mini-btn{
+      border:none; border-radius:20px;
+      padding:22px 28px;
+      font-size:30px;
+      font-weight:900;
+      cursor:pointer;
+      width:100%;
+      height:86px;
+    }
     .mini-start{ background:#0d6efd; color:#fff; }
     .mini-stop{  background:#ffc107; color:#222; }
 
     .adjust-box{ display:flex; flex-direction:column; gap:10px; justify-content:stretch; align-items:stretch; }
-    .btn-adjust{ background:#fff; border:3px solid #bdbdbd; border-radius:16px; width:100%; height:60px; font-size:28px; cursor:pointer; font-weight:900; }
+    .btn-adjust{ background:#fff; border:3px solid #bdbdbd; border-radius:16px; width:100%; height:56px; font-size:26px; cursor:pointer; font-weight:900; }
 
     @keyframes cellBlink{0%{box-shadow:0 0 0 0 rgba(255,0,0,.22);}50%{box-shadow:0 0 0 18px rgba(255,0,0,.08);}100%{box-shadow:0 0 0 0 rgba(255,0,0,.22);} }
     .cell-blink{ animation:cellBlink 1s ease-in-out infinite; background:#fff8f8; }
@@ -140,6 +149,8 @@
     @media (max-width:1100px){
       .call-inline{ gap:10px 14px; }
       .btn-call{ padding:10px 12px; font-size:17px; min-width:46px; }
+      .mini-btn{ height:76px; font-size:28px; padding:20px 24px; }
+      .btn-adjust{ height:52px; font-size:24px; }
     }
 
     /* ✅ 호출 UI 크기 강화 + 층별 색상 */
@@ -167,16 +178,13 @@
     .io-btn:active{ transform: translateY(1px); }
     .io-btn[data-type="입원"].active{ background:#0d6efd; border-color:#0d6efd; color:#fff; }
     .io-btn[data-type="외래"].active{ background:#2e7d32; border-color:#2e7d32; color:#fff; }
-    @media (max-width:1100px){ .io-btn{ padding:12px 18px; font-size:18px; } }
 
-    /* ===== 치료 칸(핫팩/물리/침) 축소 전용 ===== */
-    .therapy-cell .status-box{ min-height:120px; padding:10px; }
+    /* ===== 치료 칸(핫팩/물리/침) 축소 전용 (이름칸 확보) ===== */
+    .therapy-cell .status-box{ min-height:140px; padding:12px; }
     .therapy-cell .time-text{
-      font-size:clamp(32px, 3.8vw, 44px);  /* 시간 글자 조금 축소 */
-      min-width:82px;
+      font-size:clamp(36px, 4.2vw, 50px);
+      min-width:90px;
     }
-    .therapy-cell .mini-btn{ height:60px; font-size:22px; padding:12px 16px; }
-    .therapy-cell .btn-adjust{ height:48px; font-size:22px; }
 
     /* ===== 추나(O/X) 크게 ===== */
     .chuna-box{
@@ -189,9 +197,11 @@
       padding:18px 26px; font-size:32px; font-weight:900; cursor:pointer;
       min-width:90px;
     }
-    /* 활성(O 또는 X) 시 공통 강조: JS에서 .ox-on 토글됨 */
     .ox-btn.ox-on{ background:#0d6efd; color:#fff; border-color:#0d6efd; }
 
+    /* ✅ 담당(주치의) 미선택 행: 시간표시 + 버튼 열 숨김 */
+    tr.no-doctor .time-text{ display:none; }
+    tr.no-doctor .right-col{ display:none; }
   </style>
 </head>
 <body>
@@ -408,7 +418,7 @@
       const tRef = ref(db, `${roomPath()}/timers/${key}`);
       onValue(tRef, (snap) => {
         const v = snap.val() || {};
-        const status = v.status || "대기";
+        the status = v.status || "대기";
         const ack    = !!v.ack;
 
         if (status === "완료") {
@@ -471,6 +481,10 @@
           const sel = tr.querySelector("select.doctor");
           if (sel && sel.value !== (r.dept||"")) sel.value = r.dept||"";
           tr.style.background = deptColors[r.dept||""] || "";
+
+          /* ✅ 담당 미선택 시 시간·버튼 숨김 */
+          tr.classList.toggle("no-doctor", !(r.dept && r.dept.length));
+
           const inBtn  = tr.querySelector(".io-btn[data-type='입원']");
           const outBtn = tr.querySelector(".io-btn[data-type='외래']");
           if (inBtn && outBtn){ inBtn.classList.toggle("active", r.inout === "입원"); outBtn.classList.toggle("active", r.inout === "외래"); }
@@ -565,6 +579,8 @@
       const tbody = document.getElementById("tableBody"); tbody.innerHTML = "";
       for(let i=1;i<=ROW_COUNT;i++){
         const tr = document.createElement("tr"); tr.id = "row-"+i;
+        /* 초기에는 담당 미선택 상태로 가정 → 시간/버튼 숨김 클래스 부여 */
+        tr.classList.add("no-doctor");
 
         /* 담당/입원외래 */
         const docTd = document.createElement("td");
@@ -590,7 +606,7 @@
         nameTd.addEventListener("blur", () => { update(ref(db, `${roomPath()}/rows/${i}`), { name: nameTd.textContent }); });
         tr.appendChild(nameTd);
 
-        /* 치료 3칸(축소 스타일 적용) */
+        /* 치료 3칸 */
         COLS.forEach((colName, j) => {
           const key = `r${i}_c${j}`;
           const td  = document.createElement("td");
@@ -613,7 +629,7 @@
           tr.appendChild(td);
         });
 
-        /* 추나 (글자/버튼 크게) */
+        /* 추나 */
         const chunaKey = `r${i}_c3`;
         const chunaTd  = document.createElement("td");
         chunaTd.className = "chuna-cell";
