@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>치료실 타이머 보드 v3.4 (단일 호출음 · 5초 고정)</title>
+  <title>치료실 타이머 보드 v3.5 (층별 수신 UI · 5초 단일 호출음)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root{
@@ -12,7 +12,7 @@
       --dept-1:#d7c7ff;
       --dept-2:#c7ffd6;
       --dept-3:#ffc7eb;
-      --dept-4:#ffe0b2;     /* 4과 */
+      --dept-4:#ffe0b2;
     }
     body{ font-family:"Noto Sans KR",sans-serif; background:#f5f7fb; margin:0; padding:100px 14px 20px 14px; }
     h2{margin:0 0 12px; display:inline-block;}
@@ -77,24 +77,26 @@
     @keyframes cellBlink{0%{box-shadow:0 0 0 0 rgba(255,0,0,.22);}50%{box-shadow:0 0 0 18px rgba(255,0,0,.08);}100%{box-shadow:0 0 0 0 rgba(255,0,0,.22);} }
     .cell-blink{ animation:cellBlink 1s ease-in-out infinite; background:#fff8f8; }
 
+    /* ====== 수신 패널 (층별 2줄) ====== */
     .nurse-panel{
-      position:fixed; top:10px; left:10px; background:rgba(255,255,255,0.98);
-      border:2px solid #dcdcdc; border-radius:999px; padding:20px 26px; box-shadow:0 12px 28px rgba(0,0,0,0.10);
-      display:flex; gap:18px; align-items:center; z-index:1000;
+      position:fixed; top:10px; left:10px; right:10px;
+      background:rgba(255,255,255,0.98);
+      border:2px solid #dcdcdc; border-radius:18px; padding:14px 16px;
+      box-shadow:0 12px 28px rgba(0,0,0,0.10); z-index:1000;
     }
-    .nurse-label{ font-size:28px; font-weight:900; margin-right:12px; white-space:nowrap; }
-    .btn-call{ border:none; border-radius:999px; padding:20px 28px; font-size:28px; cursor:pointer; background:#f1f3f5; font-weight:900; white-space:nowrap; letter-spacing:.2px; box-shadow:0 3px 8px rgba(0,0,0,0.12); }
+    .nurse-grid{ display:grid; grid-template-columns: 72px repeat(5, minmax(90px, 1fr)); gap:10px; align-items:center; }
+    .nurse-row-label{ font-size:18px; font-weight:900; text-align:center; }
+    .nurse-label{ font-size:20px; font-weight:900; margin-bottom:10px; white-space:nowrap; }
+    .btn-call{ border:none; border-radius:999px; padding:14px 18px; font-size:20px; cursor:pointer; background:#f1f3f5; font-weight:900; box-shadow:0 3px 8px rgba(0,0,0,0.12); }
     .btn-call.on{ outline:3px solid #ff4d4f; background:#ffe6e6; }
-
+    .btn-call[disabled]{ opacity:.5; cursor:not-allowed; }
     @keyframes blinkBtn{0%{background:#ffe6e6;transform:translateY(0)}50%{background:#ffb3b3;transform:translateY(-1px)}100%{background:#ffe6e6;transform:translateY(0)}}
     .blink-btn{ animation:blinkBtn .7s ease-in-out infinite; }
 
-    .listen-group{ display:flex;gap:8px;align-items:center; flex-wrap:wrap; }
-
+    .listen-group{ display:flex;gap:8px;align-items:center; flex-wrap:wrap; margin-top:8px; }
     .io-group{ display:flex; gap:10px; margin-top:10px; justify-content:center; }
     .io-btn{ border:3px solid #bbb; background:#fff; border-radius:999px; padding:8px 14px; font-size:16px; font-weight:900; cursor:pointer; }
     .io-btn.active{ background:#222; color:#fff; border-color:#222; }
-
     .io-btn[data-type="입원"].active{ background:#0d6efd; color:#fff; border-color:#0d6efd; }
     .io-btn[data-type="외래"].active{ background:#2e7d32; color:#fff; border-color:#2e7d32; }
 
@@ -109,7 +111,7 @@
 </head>
 <body>
   <div class="topbar">
-    <h2>🏥 치료실 타이머판 (단일 호출음 · 5초 고정)</h2>
+    <h2>🏥 치료실 타이머판 (층별 수신 · 5초 단일 호출음)</h2>
     <div class="grow"></div>
 
     <div style="display:flex;gap:8px;align-items:center;">
@@ -159,16 +161,27 @@
     <tbody id="tableBody"></tbody>
   </table>
 
+  <!-- ===== 층별 수신 패널 ===== -->
   <div class="nurse-panel">
-    <span class="nurse-label" id="nurseLabel">간호사→의사 호출</span>
-    <button class="btn-call" id="call-1과" onclick="toggleCall('1과')">1과</button>
-    <button class="btn-call" id="call-2과" onclick="toggleCall('2과')">2과</button>
-    <button class="btn-call" id="call-3과" onclick="toggleCall('3과')">3과</button>
-    <button class="btn-call" id="call-4과" onclick="toggleCall('4과')">4과</button>
-    <button class="btn-call" id="call-양방" onclick="toggleCall('양방')">양방</button>
+    <div class="nurse-label" id="nurseLabel">의사 호출 수신(무음 가능)</div>
+    <div class="nurse-grid">
+      <div class="nurse-row-label">1층</div>
+      <button class="btn-call" id="call-1F-1과" onclick="toggleCall('1F','1과')">1과</button>
+      <button class="btn-call" id="call-1F-2과" onclick="toggleCall('1F','2과')">2과</button>
+      <button class="btn-call" id="call-1F-3과" onclick="toggleCall('1F','3과')">3과</button>
+      <button class="btn-call" id="call-1F-4과" onclick="toggleCall('1F','4과')">4과</button>
+      <button class="btn-call" id="call-1F-양방" onclick="toggleCall('1F','양방')">양방</button>
+
+      <div class="nurse-row-label">2층</div>
+      <button class="btn-call" id="call-2F-1과" onclick="toggleCall('2F','1과')">1과</button>
+      <button class="btn-call" id="call-2F-2과" onclick="toggleCall('2F','2과')">2과</button>
+      <button class="btn-call" id="call-2F-3과" onclick="toggleCall('2F','3과')">3과</button>
+      <button class="btn-call" id="call-2F-4과" onclick="toggleCall('2F','4과')">4과</button>
+      <button class="btn-call" id="call-2F-양방" onclick="toggleCall('2F','양방')">양방</button>
+    </div>
   </div>
 
-  <!-- 단일 호출음 (모든 알림 5초 고정) -->
+  <!-- 단일 호출음: 모든 알림 5초 고정(삐–삐–…) -->
   <audio id="beep" preload="auto" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"></audio>
 
   <script type="module">
@@ -188,14 +201,14 @@
     const app = initializeApp(firebaseConfig);
     const db  = getDatabase(app);
 
-    const DEPTS = ["1과","2과","3과","4과","양방"];
-    const FLOORS = ['1F','2F'];
+    const DEPTS  = ["1과","2과","3과","4과","양방"];
+    const FLOORS = ["1F","2F"];
 
     let currentFloor = new URLSearchParams(location.search).get('floor') || localStorage.getItem('currentFloor') || '1F';
     const ROLE_KEY = 'ttb_role';
     const roleParam = new URLSearchParams(location.search).get('role');
     if (roleParam === 'doctor' || roleParam === 'nurse') localStorage.setItem(ROLE_KEY, roleParam);
-    let role = (localStorage.getItem(ROLE_KEY) || 'doctor');
+    let role = (localStorage.getItem(ROLE_KEY) || 'doctor'); // doctor | nurse
 
     let DEFAULT_MINUTES = 10;
     const ROW_COUNT = 12;
@@ -211,20 +224,13 @@
     };
 
     const intervals = {};
-    const lastCallState = Object.fromEntries(DEPTS.map(d=>[d,false]));
+    const lastCallState2 = { "1F": Object.fromEntries(DEPTS.map(d=>[d,false])), "2F": Object.fromEntries(DEPTS.map(d=>[d,false])) };
     const nurseBeepTimers = {}; const nurseStopTimers  = {};
 
-    /* 의사 수신확인(무음) — 유지(필요 시 수신 채널 끄기와 함께 활용) */
+    /* 의사 수신확인(무음) — 유지 */
     let doctorMuted = JSON.parse(localStorage.getItem('doctorMuted') || '{}');
     DEPTS.forEach(d => { if (typeof doctorMuted[d] !== 'boolean') doctorMuted[d] = false; });
     function saveDoctorMuted(){ localStorage.setItem('doctorMuted', JSON.stringify(doctorMuted)); }
-    function applyDoctorMuteUI(dept){
-      const btn = document.getElementById("call-"+dept);
-      if (!btn) return;
-      btn.classList.toggle('muted', !!doctorMuted[dept]);
-      btn.title = doctorMuted[dept] ? "수신확인(무음)" : "호출음 수신중";
-    }
-    function applyAllDoctorMuteUI(){ DEPTS.forEach(applyDoctorMuteUI); }
 
     const beep = document.getElementById('beep');
 
@@ -244,26 +250,40 @@
     function applyRoleUI(){
       document.getElementById('role-doctor')?.classList.toggle('on', role==='doctor');
       document.getElementById('role-nurse')?.classList.toggle('on',  role==='nurse');
+      // 간호사는 자기 층만 활성화, 의사는 전 층 활성
+      FLOORS.forEach(f=>{
+        DEPTS.forEach(d=>{
+          const btn = document.getElementById(`call-${f}-${d}`);
+          if (!btn) return;
+          if (role==='nurse'){
+            const enable = (f === currentFloor);
+            btn.disabled = !enable;
+            btn.title = enable ? "" : "간호사 화면에서는 자신의 층만 조작할 수 있습니다.";
+          }else{
+            btn.disabled = false; btn.title = "";
+          }
+        });
+      });
     }
     function applyFloorTabs(){ FLOORS.forEach(f => document.getElementById('tab-'+f)?.classList.toggle('on', f===currentFloor)); }
     function applyNurseLabel(){
       const el = document.getElementById('nurseLabel');
       if (!el) return;
-      el.textContent = (role === 'nurse') ? '간호사→의사 호출' : '의사 호출 수신(무음 가능)';
+      el.textContent = (role === 'nurse') ? '간호사→의사 호출 (자기 층만 조작)' : '의사 호출 수신(층 구분)';
     }
 
-    applyListenUI(); applySoundButtons(); applyRoleUI(); applyFloorTabs(); applyAllDoctorMuteUI(); applyNurseLabel();
+    applyListenUI(); applySoundButtons(); applyRoleUI(); applyFloorTabs(); applyNurseLabel();
 
     window.toggleCompleteSound = () => { completeSoundOn = !completeSoundOn; save('completeSoundOn',completeSoundOn); applySoundButtons(); };
     window.toggleNurseSound    = () => { nurseSoundOn    = !nurseSoundOn;    save('nurseSoundOn',nurseSoundOn);    applySoundButtons(); if (!nurseSoundOn) stopAllNurseBeeps(); };
     window.toggleListen = (dept) => { listenChannels[dept] = !listenChannels[dept]; save('listenChannels',listenChannels); applyListenUI(); };
     window.resetSettings = () => { if (confirm("설정을 모두 초기화하시겠습니까?")) { localStorage.clear(); alert("설정이 초기화되었습니다."); location.reload(); } };
 
-    window.setRole = (r) => { if (r!=='doctor' && r!=='nurse') return; role=r; localStorage.setItem(ROLE_KEY, r); applyRoleUI(); reattachNurseListener(); applyNurseLabel(); };
+    window.setRole = (r) => { if (r!=='doctor' && r!=='nurse') return; role=r; localStorage.setItem(ROLE_KEY, r); applyRoleUI(); reattachNurseListeners(); applyNurseLabel(); };
     window.switchFloor = (f) => {
       if (!FLOORS.includes(f)) return;
       currentFloor = f; localStorage.setItem('currentFloor', f); applyFloorTabs();
-      teardownFloorListeners(); attachFloorListeners(); reattachNurseListener();
+      teardownFloorListeners(); attachFloorListeners(); reattachNurseListeners(); applyRoleUI();
     };
 
     window.applyDefaultMinutes = () => {
@@ -320,47 +340,39 @@
       set(ref(db, `${roomPath()}/chuna/${key}`), { on:onFlag, at: serverTimestamp() });
     };
 
-    /* ===== 단일 호출음 5초 고정 유틸 ===== */
+    /* ===== 단일 호출음 5초 고정 ===== */
     function playBeepOnce(){
-      try{
-        beep.currentTime = 0;
-        beep.play();
-      }catch(e){}
+      try{ beep.currentTime = 0; beep.play(); }catch(e){}
     }
     function playBeepFor5Sec(enabled){
-      if (!enabled) return { stop: ()=>{} };
+      if (!enabled) return;
       let count = 0;
       playBeepOnce();
       const intv = setInterval(()=>{
         count++;
-        if (count >= 5){ clearInterval(intv); return; } // 총 5회(약 5초) 울림
+        if (count >= 5){ clearInterval(intv); return; } // 총 5회(약 5초)
         playBeepOnce();
       }, 1000);
-      return { stop: ()=> clearInterval(intv) };
     }
 
-    /* ===== 간호사 호출: 5초 자동종료 ===== */
-    window.toggleCall = (dept) => {
-      const cRef = ref(db, `${roomPath()}/nurseCalls/${dept}`);
-      // 버튼을 누르면 무조건 5초간 ON → 자동 OFF
-      set(cRef, { on: true, at: serverTimestamp() });
-      // 5초 뒤 자동 OFF
-      setTimeout(()=> set(cRef, { on: false, at: serverTimestamp() }), 5000);
+    /* ===== 호출 토글: 눌러서 ON, 다시 눌러서 OFF (그래픽 깜빡임 유지) ===== */
+    window.toggleCall = (floor, dept) => {
+      // 간호사 역할일 때는 자기 층만 조작
+      if (role==='nurse' && floor !== currentFloor) return;
+      const cRef = ref(db, `rooms/${floor}/nurseCalls/${dept}`);
+      onValue(cRef, (snap)=>{
+        const cur = !!(snap.val() && snap.val().on);
+        const next = !cur;
+        set(cRef, { on: next, at: serverTimestamp() });
+        // 켜질 때만 5초간 소리
+        if (next && nurseSoundOn && listenChannels[dept]) playBeepFor5Sec(true);
+      }, { onlyOnce:true });
     };
 
     function startNurseBeep(dept){
-      if (nurseBeepTimers[dept]) clearInterval(nurseBeepTimers[dept]);
-      if (nurseStopTimers[dept])  clearTimeout(nurseStopTimers[dept]);
-      const doBeep = ()=>{ if (nurseSoundOn && listenChannels[dept]) playBeepOnce(); };
-      doBeep();
-      nurseBeepTimers[dept] = setInterval(doBeep, 1000);
-      nurseStopTimers[dept]  = setTimeout(()=> stopNurseBeep(dept), 5000);
+      // 소리는 5초만: 버튼 상태 변화에서 playBeepFor5Sec 호출로 일원화했으므로 별도 타이머 불필요
+      if (nurseSoundOn && listenChannels[dept]) playBeepFor5Sec(true);
     }
-    function stopNurseBeep(dept){
-      if (nurseBeepTimers[dept]){ clearInterval(nurseBeepTimers[dept]); nurseBeepTimers[dept]=null; }
-      if (nurseStopTimers[dept]) { clearTimeout(nurseStopTimers[dept]); nurseStopTimers[dept]=null; }
-    }
-    function stopAllNurseBeeps(){ DEPTS.forEach(stopNurseBeep); }
 
     /* ===== 층 데이터 리스너 ===== */
     let floorRefs = [];
@@ -408,8 +420,7 @@
                 st.textContent = "완료"; st.className = "pill pill-done";
                 tt.textContent = "";
                 box.classList.add("cell-blink");
-                // 완료음도 5초 고정
-                playBeepFor5Sec(completeSoundOn);
+                if (completeSoundOn) playBeepFor5Sec(true);
                 update(ref(db, `${roomPath()}/timers/${key}`), { status: "완료", endAt: null, remaining: 0 });
               }
             };
@@ -441,28 +452,29 @@
     }
     function teardownFloorListeners(){ floorRefs.forEach(r => off(r)); floorRefs = []; }
 
-    /* ===== 호출 수신(의사/간호사 공통) — 5초만 울림 ===== */
-    let nurseRef = null;
-    function attachNurseListener(){
-      nurseRef = ref(db, `${roomPath()}/nurseCalls`);
-      onValue(nurseRef, (snap)=>{
+    /* ===== 간호사 호출 수신 리스너 (두 층 모두 구독) ===== */
+    let nurseRefs = [];
+    function attachNurseListeners(){
+      // 1F / 2F 각각 리스닝 -> 버튼 상태 반영 + 소리 5초 재생(켜질 때만)
+      nurseRefs = FLOORS.map(f => ref(db, `rooms/${f}/nurseCalls`));
+      nurseRefs.forEach((rf, idx) => onValue(rf, (snap)=>{
+        const floor = FLOORS[idx];
         const c = snap.val() || {};
         DEPTS.forEach(dept=>{
-          const btn = document.getElementById("call-"+dept);
-          const on  = !!(c[dept] && c[dept].on);
+          const on = !!(c[dept] && c[dept].on);
+          const btn = document.getElementById(`call-${floor}-${dept}`);
+          if (!btn) return;
+          const wasOn = lastCallState2[floor][dept];
           btn.classList.toggle("on", on);
           btn.classList.toggle("blink-btn", on);
-          if (on && !lastCallState[dept]){
-            if (!doctorMuted[dept]) startNurseBeep(dept); // 5초 자동정지
-          } else if (!on && lastCallState[dept]) {
-            stopNurseBeep(dept);
-          }
-          lastCallState[dept] = on;
+          // 켜질 때 소리 5초
+          if (on && !wasOn && nurseSoundOn && listenChannels[dept]) playBeepFor5Sec(true);
+          lastCallState2[floor][dept] = on;
         });
-      });
+      }));
     }
-    function detachNurseListener(){ if (nurseRef) off(nurseRef); nurseRef = null; }
-    function reattachNurseListener(){ detachNurseListener(); attachNurseListener(); }
+    function detachNurseListeners(){ nurseRefs.forEach(r => off(r)); nurseRefs = []; }
+    function reattachNurseListeners(){ detachNurseListeners(); attachNurseListeners(); }
 
     function fmt(sec){ const m=Math.floor(sec/60), s=sec%60; return `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`; }
 
@@ -531,7 +543,7 @@
       }
     }
 
-    buildTable(); attachFloorListeners(); attachNurseListener();
+    buildTable(); attachFloorListeners(); attachNurseListeners();
   </script>
 </body>
 </html>
