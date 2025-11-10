@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>치료실 타이머 보드 v3.9 (호출 UI 스티키·5초 호출음·2단계 터치)</title>
+  <title>치료실 타이머 보드 v3.10 (호출 UI 스티키·5초 호출음·2단계 터치)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root{
@@ -51,11 +51,21 @@
     table{ width:100%; border-collapse:collapse; background:#fff; box-shadow:0 2px 8px rgba(0,0,0,0.03); }
     thead{ background:var(--purple); color:#fff; }
     th,td{ border:1px solid #ececec; padding:12px 10px; text-align:center; font-size:18px; }
-    th:nth-child(1){ width:170px; }
-    th:nth-child(2){ width:260px; text-align:center; } td:nth-child(2){ text-align:left; }
-    .name-cell{ font-size:clamp(22px, 2.8vw, 38px); font-weight:800; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 
-    /* ===== 큰 셀 레이아웃 ===== */
+    /* ▶ 폭 재조정: 이름 칸 확대, 치료 칸 축소 */
+    th:nth-child(1){ width:170px; }
+    th:nth-child(2){ width:420px; text-align:center; }  /* 이름 칸 넓힘 */
+    td:nth-child(2){ text-align:left; }
+    th:nth-child(3), th:nth-child(4), th:nth-child(5){ width:210px; } /* 치료 칸 줄임 */
+    th:nth-child(6){ width:240px; } /* 추나 칸 여유 */
+
+    /* 이름 글자 살짝 확대 */
+    .name-cell{
+      font-size:clamp(26px, 3.2vw, 44px);
+      font-weight:800; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+
+    /* ===== 큰 셀 레이아웃(공통) ===== */
     .status-box{
       display:grid; grid-template-columns: 1fr auto; align-items:center; gap:16px;
       min-height:140px; padding:14px 14px; border-radius:16px; background:#ffffff;
@@ -89,10 +99,10 @@
     /* ===== 호출 UI: 제목 아래 한 줄 (확대 + 스티키) ===== */
     .call-sticky{
       position: sticky;
-      top: 0;                     /* 화면 맨 위에 고정 */
+      top: 0;
       z-index: 1000;
       padding: 6px 0;
-      background: rgba(245,247,251,0.96); /* 배경 살짝 불투명 */
+      background: rgba(245,247,251,0.96);
       backdrop-filter: blur(3px);
       border-bottom: 1px solid #e8ecf3;
     }
@@ -131,99 +141,56 @@
       .call-inline{ gap:10px 14px; }
       .btn-call{ padding:10px 12px; font-size:17px; min-width:46px; }
     }
-/* ✅ 호출 UI 크기 강화 + 층별 색상 */
-.call-label{
-  font-size:24px;
-  font-weight:900;
-}
 
-.call-inline{
-  gap:24px 36px;
-}
+    /* ✅ 호출 UI 크기 강화 + 층별 색상 */
+    .call-label{ font-size:24px; font-weight:900; }
+    .call-inline{ gap:24px 36px; }
+    .call-group{ padding:18px 22px; gap:18px; }
+    .btn-call{
+      font-size:30px; padding:20px 28px; min-width:80px; border-radius:999px; font-weight:900;
+      box-shadow:0 3px 8px rgba(0,0,0,0.15);
+    }
+    .call-1F .btn-call{ background:#ffe5e5; color:#b30000; border:3px solid #ff4d4d; }
+    .call-2F .btn-call{ background:#e5f0ff; color:#0048b3; border:3px solid #4d8cff; }
+    .btn-call.on{ background:#ffcccc; border-color:#ff0000; }
+    .call-2F .btn-call.on{ background:#cce0ff; border-color:#0058ff; }
+    .call-sticky { padding:14px 0; }
 
-.call-group{
-  padding:18px 22px;
-  gap:18px;
-}
+    /* ===== 입원/외래 버튼 크게 + 색상 구분 ===== */
+    .io-group{ display:flex; gap:12px; margin-top:8px; flex-wrap:wrap; }
+    .io-btn{
+      border:4px solid #444; background:#fff; border-radius:999px;
+      padding:18px 28px; font-size:24px; font-weight:900; cursor:pointer;
+      box-shadow:0 2px 6px rgba(0,0,0,.12);
+      min-width:120px; min-height:48px; line-height:1.1;
+    }
+    .io-btn:active{ transform: translateY(1px); }
+    .io-btn[data-type="입원"].active{ background:#0d6efd; border-color:#0d6efd; color:#fff; }
+    .io-btn[data-type="외래"].active{ background:#2e7d32; border-color:#2e7d32; color:#fff; }
+    @media (max-width:1100px){ .io-btn{ padding:12px 18px; font-size:18px; } }
 
-.btn-call{
-  font-size:30px;
-  padding:20px 28px;
-  min-width:80px;
-  border-radius:999px;
-  font-weight:900;
-  box-shadow:0 3px 8px rgba(0,0,0,0.15);
-}
+    /* ===== 치료 칸(핫팩/물리/침) 축소 전용 ===== */
+    .therapy-cell .status-box{ min-height:120px; padding:10px; }
+    .therapy-cell .time-text{
+      font-size:clamp(32px, 3.8vw, 44px);  /* 시간 글자 조금 축소 */
+      min-width:82px;
+    }
+    .therapy-cell .mini-btn{ height:60px; font-size:22px; padding:12px 16px; }
+    .therapy-cell .btn-adjust{ height:48px; font-size:22px; }
 
-/* ✅ 1층(빨강) / 2층(파랑) 색상 적용 */
-.call-1F .btn-call{
-  background:#ffe5e5;
-  color:#b30000;
-  border:3px solid #ff4d4d;
-}
-
-.call-2F .btn-call{
-  background:#e5f0ff;
-  color:#0048b3;
-  border:3px solid #4d8cff;
-}
-
-/* ✅ 활성 상태(깜빡일 때) 강조 */
-.btn-call.on{
-  background:#ffcccc;
-  border-color:#ff0000;
-}
-.call-2F .btn-call.on{
-  background:#cce0ff;
-  border-color:#0058ff;
-}
-
-/* ✅ 고정바 padding 조금 더 */
-.call-sticky { 
-  padding:14px 0; 
-}
-/* ===== 입원/외래 버튼 크게 + 색상 구분 ===== */
-.io-group{
-  display:flex;
-  gap:12px;
-  margin-top:8px;
-  flex-wrap:wrap;
-}
-
-.io-btn{
-  border:4px solid #444;
-  background:#fff;
-  border-radius:999px;
-  padding:18px 28px;     /* ← 버튼 전체 크기 */
-  font-size:24px;        /* ← 글자 크기 */
-  font-weight:900;
-  cursor:pointer;
-  box-shadow:0 2px 6px rgba(0,0,0,.12);
-}
-
-.io-btn:active{
-  transform: translateY(1px);
-}
-
-/* 활성 상태 색상(JS에서 .active 토글됨) */
-.io-btn[data-type="입원"].active{
-  background:#0d6efd;    /* 파랑 */
-  border-color:#0d6efd;
-  color:#fff;
-}
-.io-btn[data-type="외래"].active{
-  background:#2e7d32;    /* 초록 */
-  border-color:#2e7d32;
-  color:#fff;
-}
-
-/* 모바일/작은 화면일 때 살짝 축소 */
-@media (max-width:1100px){
-  .io-btn{
-    padding:12px 18px;
-    font-size:18px;
-  }
-}
+    /* ===== 추나(O/X) 크게 ===== */
+    .chuna-box{
+      display:flex; align-items:center; justify-content:space-between;
+      min-height:140px; padding:16px; border-radius:16px; background:#fff;
+    }
+    .ox-group{ display:flex; gap:16px; }
+    .ox-btn{
+      border:3px solid #444; background:#fff; border-radius:16px;
+      padding:18px 26px; font-size:32px; font-weight:900; cursor:pointer;
+      min-width:90px;
+    }
+    /* 활성(O 또는 X) 시 공통 강조: JS에서 .ox-on 토글됨 */
+    .ox-btn.ox-on{ background:#0d6efd; color:#fff; border-color:#0d6efd; }
 
   </style>
 </head>
@@ -232,32 +199,29 @@
   <h2>🏥 치료실 타이머판</h2>
 
   <!-- 제목 아래: 스크롤 고정 호출 UI -->
-<div class="call-sticky">
-  <div class="call-inline">
-    
-    <!-- ✅ 1층 그룹 (빨강) -->
-    <div class="call-group call-1F">
-      <span class="call-label">1층:</span>
-      <button class="btn-call" id="call-1F-1과" title="1층-1과" onclick="toggleCall('1F','1과')">1</button>
-      <button class="btn-call" id="call-1F-2과" title="1층-2과" onclick="toggleCall('1F','2과')">2</button>
-      <button class="btn-call" id="call-1F-3과" title="1층-3과" onclick="toggleCall('1F','3과')">3</button>
-      <button class="btn-call" id="call-1F-4과" title="1층-4과" onclick="toggleCall('1F','4과')">4</button>
-      <button class="btn-call" id="call-1F-양방" title="1층-양방" onclick="toggleCall('1F','양방')">양</button>
-    </div>
+  <div class="call-sticky">
+    <div class="call-inline">
+      <!-- ✅ 1층 그룹 (빨강) -->
+      <div class="call-group call-1F">
+        <span class="call-label">1층:</span>
+        <button class="btn-call" id="call-1F-1과" title="1층-1과" onclick="toggleCall('1F','1과')">1</button>
+        <button class="btn-call" id="call-1F-2과" title="1층-2과" onclick="toggleCall('1F','2과')">2</button>
+        <button class="btn-call" id="call-1F-3과" title="1층-3과" onclick="toggleCall('1F','3과')">3</button>
+        <button class="btn-call" id="call-1F-4과" title="1층-4과" onclick="toggleCall('1F','4과')">4</button>
+        <button class="btn-call" id="call-1F-양방" title="1층-양방" onclick="toggleCall('1F','양방')">양</button>
+      </div>
 
-    <!-- ✅ 2층 그룹 (파랑) -->
-    <div class="call-group call-2F">
-      <span class="call-label">2층:</span>
-      <button class="btn-call" id="call-2F-1과" title="2층-1과" onclick="toggleCall('2F','1과')">1</button>
-      <button class="btn-call" id="call-2F-2과" title="2층-2과" onclick="toggleCall('2F','2과')">2</button>
-      <button class="btn-call" id="call-2F-3과" title="2층-3과" onclick="toggleCall('2F','3과')">3</button>
-      <button class="btn-call" id="call-2F-4과" title="2층-4과" onclick="toggleCall('2F','4과')">4</button>
-      <button class="btn-call" id="call-2F-양방" title="2층-양방" onclick="toggleCall('2F','양방')">양</button>
+      <!-- ✅ 2층 그룹 (파랑) -->
+      <div class="call-group call-2F">
+        <span class="call-label">2층:</span>
+        <button class="btn-call" id="call-2F-1과" title="2층-1과" onclick="toggleCall('2F','1과')">1</button>
+        <button class="btn-call" id="call-2F-2과" title="2층-2과" onclick="toggleCall('2F','2과')">2</button>
+        <button class="btn-call" id="call-2F-3과" title="2층-3과" onclick="toggleCall('2F','3과')">3</button>
+        <button class="btn-call" id="call-2F-4과" title="2층-4과" onclick="toggleCall('2F','4과')">4</button>
+        <button class="btn-call" id="call-2F-양방" title="2층-양방" onclick="toggleCall('2F','양방')">양</button>
+      </div>
     </div>
-
   </div>
-</div>
-
 
   <!-- 상단 컨트롤(층/역할/사운드/채널/설정) -->
   <div class="topbar">
@@ -601,6 +565,8 @@
       const tbody = document.getElementById("tableBody"); tbody.innerHTML = "";
       for(let i=1;i<=ROW_COUNT;i++){
         const tr = document.createElement("tr"); tr.id = "row-"+i;
+
+        /* 담당/입원외래 */
         const docTd = document.createElement("td");
         docTd.innerHTML = `
           <div>
@@ -616,6 +582,7 @@
           </div>`;
         tr.appendChild(docTd);
 
+        /* 이름 */
         const nameTd = document.createElement("td");
         nameTd.className = "name-cell";
         nameTd.textContent = `<${i}번 베드>`;
@@ -623,9 +590,11 @@
         nameTd.addEventListener("blur", () => { update(ref(db, `${roomPath()}/rows/${i}`), { name: nameTd.textContent }); });
         tr.appendChild(nameTd);
 
+        /* 치료 3칸(축소 스타일 적용) */
         COLS.forEach((colName, j) => {
           const key = `r${i}_c${j}`;
           const td  = document.createElement("td");
+          td.className = "therapy-cell";
           td.innerHTML = `
             <div class="status-box" id="box-${key}" onclick="onBoxClick('${key}')">
               <div class="left-col">
@@ -644,16 +613,18 @@
           tr.appendChild(td);
         });
 
+        /* 추나 (글자/버튼 크게) */
         const chunaKey = `r${i}_c3`;
         const chunaTd  = document.createElement("td");
+        chunaTd.className = "chuna-cell";
         chunaTd.innerHTML = `
           <div class="chuna-box" id="box-${chunaKey}">
             <div class="left-col">
-              <span class="pill pill-wait" id="status-${chunaKey}">대기</span>
+              <span class="pill pill-wait" id="status-${chunaKey}" style="font-size:20px;">대기</span>
             </div>
             <div class="ox-group">
-              <button class="ox-btn ox-on"  id="ox-on-${chunaKey}"  onclick="toggleChuna('${chunaKey}', true)">O</button>
-              <button class="ox-btn ox-off" id="ox-off-${chunaKey}" onclick="toggleChuna('${chunaKey}', false)">X</button>
+              <button class="ox-btn" id="ox-on-${chunaKey}"  onclick="toggleChuna('${chunaKey}', true)">O</button>
+              <button class="ox-btn" id="ox-off-${chunaKey}" onclick="toggleChuna('${chunaKey}', false)">X</button>
             </div>
           </div>`;
         tr.appendChild(chunaTd);
