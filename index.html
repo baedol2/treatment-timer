@@ -131,18 +131,58 @@
       .call-inline{ gap:10px 14px; }
       .btn-call{ padding:10px 12px; font-size:17px; min-width:46px; }
     }
-.call-label{ font-size:20px; }
-.call-inline{ gap:18px 30px; }
-.call-group{ padding:14px 18px; gap:14px; }
-
-.btn-call{
+/* ✅ 호출 UI 크기 강화 + 층별 색상 */
+.call-label{
   font-size:24px;
-  padding:16px 22px;
-  min-width:64px;
-  border-radius:999px;
+  font-weight:900;
 }
 
-.call-sticky{ padding:10px 0; }
+.call-inline{
+  gap:24px 36px;
+}
+
+.call-group{
+  padding:18px 22px;
+  gap:18px;
+}
+
+.btn-call{
+  font-size:30px;
+  padding:20px 28px;
+  min-width:80px;
+  border-radius:999px;
+  font-weight:900;
+  box-shadow:0 3px 8px rgba(0,0,0,0.15);
+}
+
+/* ✅ 1층(빨강) / 2층(파랑) 색상 적용 */
+.call-1F .btn-call{
+  background:#ffe5e5;
+  color:#b30000;
+  border:3px solid #ff4d4d;
+}
+
+.call-2F .btn-call{
+  background:#e5f0ff;
+  color:#0048b3;
+  border:3px solid #4d8cff;
+}
+
+/* ✅ 활성 상태(깜빡일 때) 강조 */
+.btn-call.on{
+  background:#ffcccc;
+  border-color:#ff0000;
+}
+.call-2F .btn-call.on{
+  background:#cce0ff;
+  border-color:#0058ff;
+}
+
+/* ✅ 고정바 padding 조금 더 */
+.call-sticky { 
+  padding:14px 0; 
+}
+
   </style>
 </head>
 <body>
@@ -150,26 +190,32 @@
   <h2>🏥 치료실 타이머판</h2>
 
   <!-- 제목 아래: 스크롤 고정 호출 UI -->
-  <div class="call-sticky">
-    <div class="call-inline">
-      <div class="call-group">
-        <span class="call-label">1층:</span>
-        <button class="btn-call" id="call-1F-1과" title="1층-1과" onclick="toggleCall('1F','1과')">1</button>
-        <button class="btn-call" id="call-1F-2과" title="1층-2과" onclick="toggleCall('1F','2과')">2</button>
-        <button class="btn-call" id="call-1F-3과" title="1층-3과" onclick="toggleCall('1F','3과')">3</button>
-        <button class="btn-call" id="call-1F-4과" title="1층-4과" onclick="toggleCall('1F','4과')">4</button>
-        <button class="btn-call" id="call-1F-양방" title="1층-양방" onclick="toggleCall('1F','양방')">양</button>
-      </div>
-      <div class="call-group">
-        <span class="call-label">2층:</span>
-        <button class="btn-call" id="call-2F-1과" title="2층-1과" onclick="toggleCall('2F','1과')">1</button>
-        <button class="btn-call" id="call-2F-2과" title="2층-2과" onclick="toggleCall('2F','2과')">2</button>
-        <button class="btn-call" id="call-2F-3과" title="2층-3과" onclick="toggleCall('2F','3과')">3</button>
-        <button class="btn-call" id="call-2F-4과" title="2층-4과" onclick="toggleCall('2F','4과')">4</button>
-        <button class="btn-call" id="call-2F-양방" title="2층-양방" onclick="toggleCall('2F','양방')">양</button>
-      </div>
+<div class="call-sticky">
+  <div class="call-inline">
+    
+    <!-- ✅ 1층 그룹 (빨강) -->
+    <div class="call-group call-1F">
+      <span class="call-label">1층:</span>
+      <button class="btn-call" id="call-1F-1과" title="1층-1과" onclick="toggleCall('1F','1과')">1</button>
+      <button class="btn-call" id="call-1F-2과" title="1층-2과" onclick="toggleCall('1F','2과')">2</button>
+      <button class="btn-call" id="call-1F-3과" title="1층-3과" onclick="toggleCall('1F','3과')">3</button>
+      <button class="btn-call" id="call-1F-4과" title="1층-4과" onclick="toggleCall('1F','4과')">4</button>
+      <button class="btn-call" id="call-1F-양방" title="1층-양방" onclick="toggleCall('1F','양방')">양</button>
     </div>
+
+    <!-- ✅ 2층 그룹 (파랑) -->
+    <div class="call-group call-2F">
+      <span class="call-label">2층:</span>
+      <button class="btn-call" id="call-2F-1과" title="2층-1과" onclick="toggleCall('2F','1과')">1</button>
+      <button class="btn-call" id="call-2F-2과" title="2층-2과" onclick="toggleCall('2F','2과')">2</button>
+      <button class="btn-call" id="call-2F-3과" title="2층-3과" onclick="toggleCall('2F','3과')">3</button>
+      <button class="btn-call" id="call-2F-4과" title="2층-4과" onclick="toggleCall('2F','4과')">4</button>
+      <button class="btn-call" id="call-2F-양방" title="2층-양방" onclick="toggleCall('2F','양방')">양</button>
+    </div>
+
   </div>
+</div>
+
 
   <!-- 상단 컨트롤(층/역할/사운드/채널/설정) -->
   <div class="topbar">
