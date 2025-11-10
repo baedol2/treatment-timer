@@ -418,7 +418,7 @@
       const tRef = ref(db, `${roomPath()}/timers/${key}`);
       onValue(tRef, (snap) => {
         const v = snap.val() || {};
-        the status = v.status || "대기";
+        const status = v.status || "대기";
         const ack    = !!v.ack;
 
         if (status === "완료") {
