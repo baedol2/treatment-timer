@@ -545,7 +545,7 @@
           if (st) st.textContent = on ? "진행" : "대기";
           if (st) st.className = "pill " + (on ? "pill-run" : "pill-wait");
           if (oBtn) oBtn.classList.toggle("ox-on", on);
-          if (xBtn) xBtn.classList.toggle("ox-on", !on);
+          if (xBtn) xBtn.classList.remove("ox-on");
         }
       });
     }
