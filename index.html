@@ -547,7 +547,7 @@
         tr.classList.add("no-doctor");
 
         const nameTd = tr.children[1];
-        if (nameTd) nameTd.textContent = `<${rowIndex}번 베드>`;
+        if (nameTd) nameTd.textContent = `<${rowIndex}번 베드> /`;
 
         updateYangbangCell(rowIndex, "");
       }
@@ -603,7 +603,7 @@
           updateYangbangCell(i, r.dept || "");
 
           const nameTd = tr.children[1];
-          const placeholder = `<${i}번 베드>`;
+          const placeholder = `<${i}번 베드> /`;
           if (typeof r.name === "string" && r.name.length>0){
             if (nameTd.textContent !== r.name) nameTd.textContent = r.name;
           } else {
@@ -720,7 +720,7 @@
         /* 이름 */
         const nameTd = document.createElement("td");
         nameTd.className = "name-cell";
-        nameTd.textContent = `<${i}번 베드>`;
+        nameTd.textContent = `<${i}번 베드> /`;
         nameTd.contentEditable = true;
         nameTd.addEventListener("blur", () => { update(ref(db, `${roomPath()}/rows/${i}`), { name: nameTd.textContent }); });
         tr.appendChild(nameTd);
