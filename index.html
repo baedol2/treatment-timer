@@ -109,12 +109,27 @@
     .adjust-box{ display:flex; flex-direction:column; gap:10px; justify-content:stretch; align-items:stretch; }
     .btn-adjust{ background:#fff; border:3px solid #bdbdbd; border-radius:16px; width:100%; height:56px; font-size:26px; cursor:pointer; font-weight:900; }
 
+    /* ✅ 완료 시 행 배경색으로 깜빡임 (박스 색만 과 색으로 변경) */
     @keyframes cellBlink{
-      0%{box-shadow:0 0 0 0 rgba(255,0,0,.22);}
-      50%{box-shadow:0 0 0 18px rgba(255,0,0,.08);}
-      100%{box-shadow:0 0 0 0 rgba(255,0,0,.22);}
+      0%{
+        transform:scale(1);
+        box-shadow:0 0 0 0 rgba(255,255,255,0.0);
+        filter:brightness(1);
+      }
+      50%{
+        transform:scale(1.03);
+        box-shadow:0 0 0 14px rgba(255,255,255,0.7);
+        filter:brightness(1.15);
+      }
+      100%{
+        transform:scale(1);
+        box-shadow:0 0 0 0 rgba(255,255,255,0.0);
+        filter:brightness(1);
+      }
     }
-    .cell-blink{ animation:cellBlink 1s ease-in-out infinite; background:#fff8f8; }
+    .cell-blink{
+      animation:cellBlink 1s ease-in-out infinite;
+    }
 
     /* ===== 호출 UI: 제목 아래 한 줄 (확대 + 스티키) ===== */
     .call-sticky{
@@ -343,6 +358,21 @@
     const intervals = {};
     const lastCallState2 = { "1F": Object.fromEntries(DEPTS.map(d=>[d,false])), "2F": Object.fromEntries(DEPTS.map(d=>[d,false])) };
 
+    /* ✅ 완료 셀 깜빡임 상태 관리: 행 배경색으로 박스 띄우기 */
+    function setCellBlink(key, on){
+      const box = document.getElementById("box-"+key);
+      if (!box) return;
+      if (on){
+        const tr = box.closest("tr");
+        const rowBg = tr ? (tr.style.background || "") : "";
+        box.style.background = rowBg || "#fff8f8";
+        box.classList.add("cell-blink");
+      } else {
+        box.classList.remove("cell-blink");
+        box.style.background = "#ffffff";
+      }
+    }
+
     /* 수신 채널/사운드 설정 */
     const beep = document.getElementById('beep');
     let completeSoundOn = JSON.parse(localStorage.getItem('completeSoundOn') || 'true');
@@ -418,6 +448,7 @@
         update(ref(db, `${roomPath()}/timers/${key}`), {
           status:"대기", endAt:null, remaining:0, ack:false
         });
+        setCellBlink(key,false);
       }
     };
 
@@ -436,7 +467,7 @@
     window.stopTimer = (key) => {
       const tRef = ref(db, `${roomPath()}/timers/${key}`);
       update(tRef, { status: "대기", endAt: null, remaining: 0, ack:false });
-      document.getElementById("box-"+key)?.classList.remove("cell-blink");
+      setCellBlink(key,false);
     };
     window.adjustTime = (key, diffSec) => {
       const tRef = ref(db, `${roomPath()}/timers/${key}`);
@@ -465,11 +496,11 @@
         if (status === "완료") {
           if (!ack) {
             update(tRef, { ack: true });
-            document.getElementById("box-"+key)?.classList.remove("cell-blink");
+            setCellBlink(key,false);   // ✅ 첫 클릭 시 깜빡임 해제 + 흰색 복귀
           } else {
             const baseSec = DEFAULT_MINUTES * 60;
             update(tRef, { status: "대기", endAt: null, remaining: baseSec, ack: false });
-            document.getElementById("box-"+key)?.classList.remove("cell-blink");
+            setCellBlink(key,false);   // ✅ 두 번째 클릭 시도 흰색 유지
           }
         }
       }, { onlyOnce: true });
@@ -499,7 +530,7 @@
           remaining:0,
           ack:false
         });
-        document.getElementById("box-"+key)?.classList.remove("cell-blink");
+        setCellBlink(key,false);
       });
 
       // 추나 초기화
@@ -596,7 +627,7 @@
 
           st.textContent = status;
           st.className = "pill " + (status==="진행" ? "pill-run" : status==="완료" ? "pill-done" : "pill-wait");
-          box.classList.remove("cell-blink");
+          setCellBlink(key,false);
 
           if (intervals[key]) { clearInterval(intervals[key]); intervals[key]=null; }
 
@@ -608,9 +639,9 @@
                 clearInterval(intervals[key]); intervals[key]=null;
                 st.textContent = "완료"; st.className = "pill pill-done";
                 tt.textContent = "";
-                box.classList.add("cell-blink");
                 if (completeSoundOn) playBeepFor5Sec(true);
                 update(ref(db, `${roomPath()}/timers/${key}`), { status: "완료", endAt: null, remaining: 0, ack:false });
+                setCellBlink(key,true);   // ✅ 완료 시 행 배경색으로 깜빡임
               }
             };
             tick();
@@ -619,7 +650,11 @@
             const base = DEFAULT_MINUTES;
             const remain = (typeof v.remaining === "number" && v.remaining>0) ? v.remaining : (status==="완료"?0:base*60);
             tt.textContent = (status==="완료") ? "" : (remain>0 ? fmt(remain) : "");
-            if (status === "완료" && !ack) box.classList.add("cell-blink");
+            if (status === "완료" && !ack){
+              setCellBlink(key,true);    // ✅ 완료 + 미확인 상태이면 계속 깜빡
+            } else {
+              setCellBlink(key,false);   // ✅ 나머지는 흰색 유지
+            }
           }
         });
       });
