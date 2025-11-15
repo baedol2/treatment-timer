@@ -8,11 +8,12 @@
     :root{
       --purple:#4b0082;
       --yellow:#ffe08a;
-      --dept-west:#b6dcff; /* 양방 */
-      --dept-1:#d7c7ff;
-      --dept-2:#c7ffd6;
-      --dept-3:#ffc7eb;
-      --dept-4:#ffe0b2;
+      /* 과별 배경색 */
+      --dept-west:#d3d3d3;  /* 양방: 회색 */
+      --dept-1:#87ceeb;     /* 1과: 하늘색 */
+      --dept-2:#ffd9b3;     /* 2과: 살색 */
+      --dept-3:#d2b48c;     /* 3과: 갈색(탄 색) */
+      --dept-4:#ffc0cb;     /* 4과: 핑크색 */
     }
 
     /* ===== 레이아웃 ===== */
@@ -186,18 +187,26 @@
       min-width:90px;
     }
 
-    /* ===== 추나(O/X) 크게 ===== */
+    /* ===== 추나(O/X) 크게 + 초기화 버튼 ===== */
     .chuna-box{
       display:flex; align-items:center; justify-content:space-between;
       min-height:140px; padding:16px; border-radius:16px; background:#fff;
+      gap:16px;
     }
-    .ox-group{ display:flex; gap:16px; }
+    .ox-group{ display:flex; gap:16px; align-items:center; }
     .ox-btn{
       border:3px solid #444; background:#fff; border-radius:16px;
       padding:18px 26px; font-size:32px; font-weight:900; cursor:pointer;
       min-width:90px;
     }
     .ox-btn.ox-on{ background:#0d6efd; color:#fff; border-color:#0d6efd; }
+
+    .reset-btn{
+      border:3px solid #777; background:#f1f3f5; border-radius:16px;
+      padding:16px 22px; font-size:22px; font-weight:900; cursor:pointer;
+      min-width:110px;
+    }
+    .reset-btn:active{ transform:translateY(1px); }
 
     /* ✅ 담당(주치의) 미선택 행: 시간표시 + 버튼 열 숨김 */
     tr.no-doctor .time-text{ display:none; }
@@ -373,10 +382,28 @@
 
     function roomPath(){ return `rooms/${currentFloor}`; }
 
+    function updateYangbangCell(rowIndex, dept){
+      const tr = document.getElementById("row-"+rowIndex);
+      if (!tr) return;
+      const chimTd = tr.querySelector('td.therapy-cell[data-col="침치료"]');
+      if (chimTd){
+        chimTd.style.display = (dept === "양방") ? "none" : "";
+      }
+    }
+
     window.changeDoctor = (rowIndex, dept) => {
       update(ref(db, `${roomPath()}/rows/${rowIndex}`), { dept });
       const tr = document.getElementById("row-"+rowIndex);
       if (tr) tr.style.background = deptColors[dept] || "";
+      updateYangbangCell(rowIndex, dept);
+
+      // 양방 선택 시 침치료 타이머도 초기화
+      if (dept === "양방"){
+        const key = `r${rowIndex}_c2`; // 침치료
+        update(ref(db, `${roomPath()}/timers/${key}`), {
+          status:"대기", endAt:null, remaining:0, ack:false
+        });
+      }
     };
     window.setInOut = (rowIndex, type) => { update(ref(db, `${roomPath()}/rows/${rowIndex}`), { inout:type }); };
 
@@ -439,6 +466,56 @@
       set(ref(db, `${roomPath()}/chuna/${key}`), { on:onFlag, at: serverTimestamp() });
     };
 
+    /* ===== 행 초기화 ===== */
+    window.resetRow = (rowIndex) => {
+      const basePath = roomPath();
+
+      // 행 기본 정보 초기화
+      update(ref(db, `${basePath}/rows/${rowIndex}`), {
+        dept:"",
+        inout:null,
+        name:""
+      });
+
+      // 3개 치료 타이머 초기화
+      COLS.forEach((colName, j) => {
+        const key = `r${rowIndex}_c${j}`;
+        update(ref(db, `${basePath}/timers/${key}`), {
+          status:"대기",
+          endAt:null,
+          remaining:0,
+          ack:false
+        });
+        document.getElementById("box-"+key)?.classList.remove("cell-blink");
+      });
+
+      // 추나 초기화
+      const chunaKey = `r${rowIndex}_c3`;
+      set(ref(db, `${basePath}/chuna/${chunaKey}`), {
+        on:false,
+        at: serverTimestamp()
+      });
+
+      // UI 즉시 반영 (선택/입원·외래/이름/배경색/양방-침치료 숨김)
+      const tr = document.getElementById("row-"+rowIndex);
+      if (tr){
+        const sel = tr.querySelector("select.doctor");
+        if (sel) sel.value = "";
+        tr.style.background = "";
+        tr.classList.add("no-doctor");
+
+        const inBtn  = tr.querySelector(".io-btn[data-type='입원']");
+        const outBtn = tr.querySelector(".io-btn[data-type='외래']");
+        if (inBtn) inBtn.classList.remove("active");
+        if (outBtn) outBtn.classList.remove("active");
+
+        const nameTd = tr.children[1];
+        if (nameTd) nameTd.textContent = `<${rowIndex}번 베드>`;
+
+        updateYangbangCell(rowIndex, "");
+      }
+    };
+
     /* ===== 단일 호출음 5초 고정 ===== */
     function playBeepOnce(){ try{ beep.currentTime = 0; beep.play(); }catch(e){} }
     function playBeepFor5Sec(enabled){
@@ -485,11 +562,20 @@
           /* ✅ 담당 미선택 시 시간·버튼 숨김 */
           tr.classList.toggle("no-doctor", !(r.dept && r.dept.length));
 
+          // 양방이면 침치료 셀 숨김
+          updateYangbangCell(i, r.dept || "");
+
           const inBtn  = tr.querySelector(".io-btn[data-type='입원']");
           const outBtn = tr.querySelector(".io-btn[data-type='외래']");
           if (inBtn && outBtn){ inBtn.classList.toggle("active", r.inout === "입원"); outBtn.classList.toggle("active", r.inout === "외래"); }
+
           const nameTd = tr.children[1];
-          if (r.name && nameTd.textContent !== r.name) nameTd.textContent = r.name;
+          const placeholder = `<${i}번 베드>`;
+          if (typeof r.name === "string" && r.name.length>0){
+            if (nameTd.textContent !== r.name) nameTd.textContent = r.name;
+          } else {
+            if (nameTd.textContent !== placeholder) nameTd.textContent = placeholder;
+          }
         }
       });
 
@@ -611,6 +697,7 @@
           const key = `r${i}_c${j}`;
           const td  = document.createElement("td");
           td.className = "therapy-cell";
+          td.dataset.col = colName;
           td.innerHTML = `
             <div class="status-box" id="box-${key}" onclick="onBoxClick('${key}')">
               <div class="left-col">
@@ -641,6 +728,7 @@
             <div class="ox-group">
               <button class="ox-btn" id="ox-on-${chunaKey}"  onclick="toggleChuna('${chunaKey}', true)">O</button>
               <button class="ox-btn" id="ox-off-${chunaKey}" onclick="toggleChuna('${chunaKey}', false)">X</button>
+              <button class="reset-btn" onclick="resetRow(${i})">초기화</button>
             </div>
           </div>`;
         tr.appendChild(chunaTd);
