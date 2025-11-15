@@ -109,7 +109,7 @@
     .adjust-box{ display:flex; flex-direction:column; gap:10px; justify-content:stretch; align-items:stretch; }
     .btn-adjust{ background:#fff; border:3px solid #bdbdbd; border-radius:16px; width:100%; height:56px; font-size:26px; cursor:pointer; font-weight:900; }
 
-    /* ✅ 완료 시 행 배경색으로 깜빡임 (박스 색만 과 색으로 변경) */
+    /* ✅ 완료 시 붉은색 계열로 깜빡임 */
     @keyframes cellBlink{
       0%{
         transform:scale(1);
@@ -145,12 +145,12 @@
       width:100%;
       display:flex;
       flex-wrap:wrap;
-      gap:40px 150px;            /* 그룹 간격 더 넓게 */
+      gap:40px 150px;            /* 그룹 간 간격 */
       align-items:center;
       justify-content:space-between; /* 1층 왼쪽, 2층 오른쪽 */
     }
     .call-group{
-      display:flex; align-items:center; gap:32px; padding:18px 22px; background:#fff; border-radius:14px;
+      display:flex; align-items:center; gap:48px; padding:18px 22px; background:#fff; border-radius:14px;
       box-shadow:0 2px 6px rgba(0,0,0,0.05);
       font-weight:900;
     }
@@ -358,14 +358,12 @@
     const intervals = {};
     const lastCallState2 = { "1F": Object.fromEntries(DEPTS.map(d=>[d,false])), "2F": Object.fromEntries(DEPTS.map(d=>[d,false])) };
 
-    /* ✅ 완료 셀 깜빡임 상태 관리: 행 배경색으로 박스 띄우기 */
+    /* ✅ 완료 셀 깜빡임 상태 관리: 완료 시 붉은색 계열로 통일 */
     function setCellBlink(key, on){
       const box = document.getElementById("box-"+key);
       if (!box) return;
       if (on){
-        const tr = box.closest("tr");
-        const rowBg = tr ? (tr.style.background || "") : "";
-        box.style.background = rowBg || "#fff8f8";
+        box.style.background = "#ffb3b3"; // 완료 시 빨간색 계열
         box.classList.add("cell-blink");
       } else {
         box.classList.remove("cell-blink");
@@ -496,11 +494,11 @@
         if (status === "완료") {
           if (!ack) {
             update(tRef, { ack: true });
-            setCellBlink(key,false);   // ✅ 첫 클릭 시 깜빡임 해제 + 흰색 복귀
+            setCellBlink(key,false);   // 첫 클릭: 깜빡임 해제 + 흰색 복귀
           } else {
             const baseSec = DEFAULT_MINUTES * 60;
             update(tRef, { status: "대기", endAt: null, remaining: baseSec, ack: false });
-            setCellBlink(key,false);   // ✅ 두 번째 클릭 시도 흰색 유지
+            setCellBlink(key,false);   // 두 번째 클릭도 흰색 유지
           }
         }
       }, { onlyOnce: true });
@@ -641,7 +639,7 @@
                 tt.textContent = "";
                 if (completeSoundOn) playBeepFor5Sec(true);
                 update(ref(db, `${roomPath()}/timers/${key}`), { status: "완료", endAt: null, remaining: 0, ack:false });
-                setCellBlink(key,true);   // ✅ 완료 시 행 배경색으로 깜빡임
+                setCellBlink(key,true);   // 완료 시 붉은색 깜빡임
               }
             };
             tick();
@@ -651,9 +649,9 @@
             const remain = (typeof v.remaining === "number" && v.remaining>0) ? v.remaining : (status==="완료"?0:base*60);
             tt.textContent = (status==="완료") ? "" : (remain>0 ? fmt(remain) : "");
             if (status === "완료" && !ack){
-              setCellBlink(key,true);    // ✅ 완료 + 미확인 상태이면 계속 깜빡
+              setCellBlink(key,true);    // 완료 + 미확인 상태면 계속 깜빡
             } else {
-              setCellBlink(key,false);   // ✅ 나머지는 흰색 유지
+              setCellBlink(key,false);   // 나머지는 흰색 유지
             }
           }
         });
