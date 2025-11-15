@@ -36,7 +36,8 @@
       border:none; border-radius:999px; padding:14px 20px; font-size:18px; cursor:pointer; font-weight:700;
       background:#f1f3f5; box-shadow:0 2px 6px rgba(0,0,0,0.05);
     }
-    .sound-btn.on{ outline:3px solid #4caf50; } .sound-btn.off{ outline:3px solid #999; background:#f8f8f8; color:#666; }
+    .sound-btn.on{ outline:3px solid #4caf50; } 
+    .sound-btn.off{ outline:3px solid #999; background:#f8f8f8; color:#666; }
     .sound-btn.chan.on{ outline:3px solid #4caf50; }
 
     .danger-btn{
@@ -50,8 +51,13 @@
     .role-chip.on{ outline:3px solid #00c853; background:#eaffea; }
 
     table{ width:100%; border-collapse:collapse; background:#fff; box-shadow:0 2px 8px rgba(0,0,0,0.03); }
-    thead{ background:var(--purple); color:#fff; }
+    /* ◆ 헤더 배경색 남색 + 글씨 크게 */
+    thead{ background:#002f6c; color:#fff; }
     th,td{ border:1px solid #ececec; padding:12px 10px; text-align:center; font-size:18px; }
+    thead th{
+      font-size:22px;
+      font-weight:900;
+    }
 
     /* ▶ 폭 재조정: 이름 칸 확대, 치료 칸 축소 */
     th:nth-child(1){ width:170px; }
@@ -103,7 +109,11 @@
     .adjust-box{ display:flex; flex-direction:column; gap:10px; justify-content:stretch; align-items:stretch; }
     .btn-adjust{ background:#fff; border:3px solid #bdbdbd; border-radius:16px; width:100%; height:56px; font-size:26px; cursor:pointer; font-weight:900; }
 
-    @keyframes cellBlink{0%{box-shadow:0 0 0 0 rgba(255,0,0,.22);}50%{box-shadow:0 0 0 18px rgba(255,0,0,.08);}100%{box-shadow:0 0 0 0 rgba(255,0,0,.22);} }
+    @keyframes cellBlink{
+      0%{box-shadow:0 0 0 0 rgba(255,0,0,.22);}
+      50%{box-shadow:0 0 0 18px rgba(255,0,0,.08);}
+      100%{box-shadow:0 0 0 0 rgba(255,0,0,.22);}
+    }
     .cell-blink{ animation:cellBlink 1s ease-in-out infinite; background:#fff8f8; }
 
     /* ===== 호출 UI: 제목 아래 한 줄 (확대 + 스티키) ===== */
@@ -137,10 +147,29 @@
       box-shadow:0 2px 6px rgba(0,0,0,0.10);
       line-height:1;
       min-width:48px;
+      transition:transform 0.2s ease, box-shadow 0.2s ease;
     }
     .btn-call.on{ outline:3px solid #ff4d4f; background:#ffe6e6; }
     .btn-call[disabled]{ opacity:.45; cursor:not-allowed; }
-    @keyframes blinkBtn{0%{background:#ffe6e6}50%{background:#ffb3b3}100%{background:#ffe6e6}}
+
+    /* ▶ 호출 버튼 깜빡임 액션 크게 */
+    @keyframes blinkBtn{
+      0%{
+        background:#ffe6e6;
+        transform:scale(1);
+        box-shadow:0 0 0 0 rgba(255,77,77,0.7);
+      }
+      50%{
+        background:#ffb3b3;
+        transform:scale(1.12);
+        box-shadow:0 0 0 12px rgba(255,77,77,0);
+      }
+      100%{
+        background:#ffe6e6;
+        transform:scale(1);
+        box-shadow:0 0 0 0 rgba(255,77,77,0.7);
+      }
+    }
     .blink-btn{ animation:blinkBtn .7s ease-in-out infinite; }
 
     .listen-group{ display:flex;gap:8px;align-items:center; flex-wrap:wrap; }
@@ -154,10 +183,14 @@
       .btn-adjust{ height:52px; font-size:24px; }
     }
 
-    /* ✅ 호출 UI 크기 강화 + 층별 색상 */
+    /* ✅ 호출 UI 크기 강화 + 층별 색상 + 좌우 분리 & 버튼 간격 확대 */
     .call-label{ font-size:24px; font-weight:900; }
-    .call-inline{ gap:24px 36px; }
-    .call-group{ padding:18px 22px; gap:18px; }
+    .call-inline{
+      gap:32px 40px;           /* 그룹 간격 더 넓게 */
+      justify-content:space-between; /* 1층은 왼쪽, 2층은 오른쪽으로 */
+    }
+    .call-group{ padding:18px 22px; gap:24px; } /* 그룹 내부 버튼 간격 확대 */
+
     .btn-call{
       font-size:30px; padding:20px 28px; min-width:80px; border-radius:999px; font-weight:900;
       box-shadow:0 3px 8px rgba(0,0,0,0.15);
@@ -220,7 +253,7 @@
   <!-- 제목 아래: 스크롤 고정 호출 UI -->
   <div class="call-sticky">
     <div class="call-inline">
-      <!-- ✅ 1층 그룹 (빨강) -->
+      <!-- ✅ 1층 그룹 (왼쪽) -->
       <div class="call-group call-1F">
         <span class="call-label">1층:</span>
         <button class="btn-call" id="call-1F-1과" title="1층-1과" onclick="toggleCall('1F','1과')">1</button>
@@ -230,7 +263,7 @@
         <button class="btn-call" id="call-1F-양방" title="1층-양방" onclick="toggleCall('1F','양방')">양</button>
       </div>
 
-      <!-- ✅ 2층 그룹 (파랑) -->
+      <!-- ✅ 2층 그룹 (오른쪽) -->
       <div class="call-group call-2F">
         <span class="call-label">2층:</span>
         <button class="btn-call" id="call-2F-1과" title="2층-1과" onclick="toggleCall('2F','1과')">1</button>
@@ -496,7 +529,7 @@
         at: serverTimestamp()
       });
 
-      // UI 즉시 반영 (선택/입원·외래/이름/배경색/양방-침치료 숨김)
+      // UI 즉시 반영
       const tr = document.getElementById("row-"+rowIndex);
       if (tr){
         const sel = tr.querySelector("select.doctor");
