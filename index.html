@@ -55,7 +55,7 @@
     thead{ background:#002f6c; color:#fff; }
     th,td{ border:1px solid #ececec; padding:12px 10px; text-align:center; font-size:18px; }
     thead th{
-      font-size:22px;
+      font-size:30px;
       font-weight:900;
     }
 
@@ -66,9 +66,9 @@
     th:nth-child(3), th:nth-child(4), th:nth-child(5){ width:210px; } /* 치료 칸 줄임 */
     th:nth-child(6){ width:240px; } /* 추나 칸 여유 */
 
-    /* 이름 글자 살짝 확대 */
+    /* 이름 글자 더 크게 */
     .name-cell{
-      font-size:clamp(26px, 3.2vw, 44px);
+      font-size:30px;
       font-weight:800; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
     }
 
@@ -130,23 +130,24 @@
       width:100%;
       display:flex;
       flex-wrap:wrap;
-      gap:14px 22px;
+      gap:40px 80px;            /* 그룹 간격 더 넓게 */
       align-items:center;
+      justify-content:space-between; /* 1층 왼쪽, 2층 오른쪽 */
     }
     .call-group{
-      display:flex; align-items:center; gap:10px; padding:10px 12px; background:#fff; border-radius:14px;
+      display:flex; align-items:center; gap:32px; padding:18px 22px; background:#fff; border-radius:14px;
       box-shadow:0 2px 6px rgba(0,0,0,0.05);
       font-weight:900;
     }
-    .call-label{ margin-right:2px; color:#444; font-size:16px; }
+    .call-label{ margin-right:2px; color:#444; font-size:24px; font-weight:900; }
     .btn-call{
       border:none; border-radius:999px;
-      padding:12px 14px;
-      font-size:18px;
+      padding:20px 30px;
+      font-size:30px;
       cursor:pointer; background:#f1f3f5; font-weight:900;
-      box-shadow:0 2px 6px rgba(0,0,0,0.10);
+      box-shadow:0 3px 8px rgba(0,0,0,0.15);
       line-height:1;
-      min-width:48px;
+      min-width:90px;
       transition:transform 0.2s ease, box-shadow 0.2s ease;
     }
     .btn-call.on{ outline:3px solid #ff4d4f; background:#ffe6e6; }
@@ -161,8 +162,8 @@
       }
       50%{
         background:#ffb3b3;
-        transform:scale(1.12);
-        box-shadow:0 0 0 12px rgba(255,77,77,0);
+        transform:scale(1.15);
+        box-shadow:0 0 0 16px rgba(255,77,77,0);
       }
       100%{
         background:#ffe6e6;
@@ -177,41 +178,18 @@
     tbody > tr > td { padding:8px; }
 
     @media (max-width:1100px){
-      .call-inline{ gap:10px 14px; }
-      .btn-call{ padding:10px 12px; font-size:17px; min-width:46px; }
+      .call-inline{ gap:24px 40px; }
+      .btn-call{ padding:16px 22px; font-size:24px; min-width:70px; }
       .mini-btn{ height:76px; font-size:28px; padding:20px 24px; }
       .btn-adjust{ height:52px; font-size:24px; }
     }
 
-    /* ✅ 호출 UI 크기 강화 + 층별 색상 + 좌우 분리 & 버튼 간격 확대 */
-    .call-label{ font-size:24px; font-weight:900; }
-    .call-inline{
-      gap:32px 40px;           /* 그룹 간격 더 넓게 */
-      justify-content:space-between; /* 1층은 왼쪽, 2층은 오른쪽으로 */
-    }
-    .call-group{ padding:18px 22px; gap:24px; } /* 그룹 내부 버튼 간격 확대 */
-
-    .btn-call{
-      font-size:30px; padding:20px 28px; min-width:80px; border-radius:999px; font-weight:900;
-      box-shadow:0 3px 8px rgba(0,0,0,0.15);
-    }
+    /* ✅ 호출 UI 층별 색상 */
     .call-1F .btn-call{ background:#ffe5e5; color:#b30000; border:3px solid #ff4d4d; }
     .call-2F .btn-call{ background:#e5f0ff; color:#0048b3; border:3px solid #4d8cff; }
     .btn-call.on{ background:#ffcccc; border-color:#ff0000; }
     .call-2F .btn-call.on{ background:#cce0ff; border-color:#0058ff; }
     .call-sticky { padding:14px 0; }
-
-    /* ===== 입원/외래 버튼 크게 + 색상 구분 ===== */
-    .io-group{ display:flex; gap:12px; margin-top:8px; flex-wrap:wrap; }
-    .io-btn{
-      border:4px solid #444; background:#fff; border-radius:999px;
-      padding:18px 28px; font-size:24px; font-weight:900; cursor:pointer;
-      box-shadow:0 2px 6px rgba(0,0,0,.12);
-      min-width:120px; min-height:48px; line-height:1.1;
-    }
-    .io-btn:active{ transform: translateY(1px); }
-    .io-btn[data-type="입원"].active{ background:#0d6efd; border-color:#0d6efd; color:#fff; }
-    .io-btn[data-type="외래"].active{ background:#2e7d32; border-color:#2e7d32; color:#fff; }
 
     /* ===== 치료 칸(핫팩/물리/침) 축소 전용 (이름칸 확보) ===== */
     .therapy-cell .status-box{ min-height:140px; padding:12px; }
@@ -308,7 +286,7 @@
   <table id="timerTable">
     <thead>
       <tr>
-        <th>담당<br><small>입원/외래</small></th>
+        <th>담당<br><small>주치의</small></th>
         <th>환자이름</th>
         <th>핫팩</th>
         <th>물리치료</th>
@@ -415,12 +393,16 @@
 
     function roomPath(){ return `rooms/${currentFloor}`; }
 
+    // 양방 선택 시: 침치료 셀 폭은 유지하고 안쪽 박스만 숨김
     function updateYangbangCell(rowIndex, dept){
       const tr = document.getElementById("row-"+rowIndex);
       if (!tr) return;
       const chimTd = tr.querySelector('td.therapy-cell[data-col="침치료"]');
       if (chimTd){
-        chimTd.style.display = (dept === "양방") ? "none" : "";
+        const box = chimTd.querySelector('.status-box');
+        if (box){
+          box.style.visibility = (dept === "양방") ? "hidden" : "visible";
+        }
       }
     }
 
@@ -438,7 +420,6 @@
         });
       }
     };
-    window.setInOut = (rowIndex, type) => { update(ref(db, `${roomPath()}/rows/${rowIndex}`), { inout:type }); };
 
     /* ===== 타이머 조작 ===== */
     window.startTimer = (key, colName) => {
@@ -506,7 +487,6 @@
       // 행 기본 정보 초기화
       update(ref(db, `${basePath}/rows/${rowIndex}`), {
         dept:"",
-        inout:null,
         name:""
       });
 
@@ -536,11 +516,6 @@
         if (sel) sel.value = "";
         tr.style.background = "";
         tr.classList.add("no-doctor");
-
-        const inBtn  = tr.querySelector(".io-btn[data-type='입원']");
-        const outBtn = tr.querySelector(".io-btn[data-type='외래']");
-        if (inBtn) inBtn.classList.remove("active");
-        if (outBtn) outBtn.classList.remove("active");
 
         const nameTd = tr.children[1];
         if (nameTd) nameTd.textContent = `<${rowIndex}번 베드>`;
@@ -595,12 +570,8 @@
           /* ✅ 담당 미선택 시 시간·버튼 숨김 */
           tr.classList.toggle("no-doctor", !(r.dept && r.dept.length));
 
-          // 양방이면 침치료 셀 숨김
+          // 양방이면 침치료 박스 숨김(폭 유지)
           updateYangbangCell(i, r.dept || "");
-
-          const inBtn  = tr.querySelector(".io-btn[data-type='입원']");
-          const outBtn = tr.querySelector(".io-btn[data-type='외래']");
-          if (inBtn && outBtn){ inBtn.classList.toggle("active", r.inout === "입원"); outBtn.classList.toggle("active", r.inout === "외래"); }
 
           const nameTd = tr.children[1];
           const placeholder = `<${i}번 베드>`;
@@ -701,19 +672,15 @@
         /* 초기에는 담당 미선택 상태로 가정 → 시간/버튼 숨김 클래스 부여 */
         tr.classList.add("no-doctor");
 
-        /* 담당/입원외래 */
+        /* 담당(주치의 선택) */
         const docTd = document.createElement("td");
         docTd.innerHTML = `
           <div>
-            <select class="doctor" style="width:100%;padding:10px 12px;font-size:18px;border-radius:10px;"
+            <select class="doctor" style="width:100%;padding:12px 14px;font-size:30px;border-radius:10px;"
               onchange="changeDoctor(${i}, this.value)">
               <option value="">선택</option>
               ${DEPTS.map(d=>`<option value="${d}">${d}</option>`).join('')}
             </select>
-            <div class="io-group">
-              <button class="io-btn" data-type="입원" onclick="setInOut(${i}, '입원')">입원</button>
-              <button class="io-btn" data-type="외래" onclick="setInOut(${i}, '외래')">외래</button>
-            </div>
           </div>`;
         tr.appendChild(docTd);
 
