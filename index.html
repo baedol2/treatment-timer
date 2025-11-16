@@ -432,27 +432,70 @@
       }catch(e){}
     }
 
-    /* ✅ 새 완료음 재생 함수 (간호사만 들음) */
+    /* ✅ 완료음 재생 관련 상태 */
+    let completePlaying = false;
+
+    /* ✅ 새 완료음 재생 함수 (간호사만 들음, 2번 연속 재생) */
     function playCompleteSound(){
-      // 🔒 의사 화면에서는 완료음 재생 안 함 (간호사만)
+      // 의사 화면에서는 완료음 재생 안 함 (간호사만)
       if (role !== 'nurse') return;
-      try{
-        const snd = document.getElementById('soundComplete');
-        if (!snd) return;
 
-        const clone = snd.cloneNode(true);
-        snd.parentNode.replaceChild(clone, snd);
-        const audio = document.getElementById('soundComplete');
+      const audio = document.getElementById('soundComplete');
+      if (!audio) return;
 
-        audio.currentTime = 0;
-        audio.play();
-        audio.addEventListener('ended', () => {
+      // 이미 재생 중이면 중복 재생 방지
+      if (completePlaying) return;
+      completePlaying = true;
+
+      audio.currentTime = 0;
+      audio.play().then(() => {
+        // 1번 재생이 끝난 뒤 한 번 더 재생
+        audio.onended = () => {
+          audio.onended = null;
           audio.currentTime = 0;
-          audio.play();
-        }, { once: true });
-
-      }catch(e){}
+          audio.play().finally(() => {
+            completePlaying = false;
+          });
+        };
+      }).catch(err => {
+        console.warn('완료음 재생 실패:', err);
+        completePlaying = false;
+      });
     }
+
+    /* ✅ 오디오 자동재생 차단 우회: 첫 사용자 동작에서 한 번만 모두 잠금 해제 */
+    let audioUnlocked = false;
+
+    function unlockAllAudio() {
+      if (audioUnlocked) return;
+      audioUnlocked = true;
+
+      const audioIds = ['soundComplete', 'soundCall', 'beep'];
+
+      audioIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+
+        el.muted = true;  // 일단 음소거한 상태로 살짝 재생
+        const p = el.play();
+        if (p && p.then) {
+          p.then(() => {
+            el.pause();
+            el.currentTime = 0;
+            el.muted = false;  // 다시 음소거 해제
+          }).catch(err => {
+            console.warn(id + ' 오디오 잠금 해제 실패:', err);
+          });
+        }
+      });
+
+      console.log('모든 오디오 잠금 해제 시도 완료');
+    }
+
+    // 사용자의 첫 상호작용(클릭/터치/키보드)에서 한 번만 실행
+    document.addEventListener('click',      unlockAllAudio, { once: true });
+    document.addEventListener('touchstart', unlockAllAudio, { once: true });
+    document.addEventListener('keydown',    unlockAllAudio, { once: true });
 
     function save(k,v){ localStorage.setItem(k, JSON.stringify(v)); }
     function applyListenUI(){
@@ -692,7 +735,7 @@
         const cur = !!(snap.val() && snap.val().on);
         const next = !cur;
         set(cRef, { on: next, at: serverTimestamp() });
-        // 🔊 실제 호출음 재생은 각 화면의 nurseCalls 리스너에서 처리
+        // 실제 호출음 재생은 각 화면의 nurseCalls 리스너에서 처리
       }, { onlyOnce:true });
     };
 
@@ -808,7 +851,7 @@
           btn.classList.toggle("on", on);
           btn.classList.toggle("blink-btn", on);
           if (on && !wasOn && listenChannels[dept]) {
-            // 🔔 새로운 호출이 들어올 때만 1번 재생
+            // 새로운 호출이 들어올 때만 1번 재생
             playCallSound();
           }
           lastCallState2[floor][dept] = on;
