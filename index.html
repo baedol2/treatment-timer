@@ -430,22 +430,22 @@
       try{
         const snd = document.getElementById('soundComplete');
         if (!snd) return;
-        snd.currentTime = 0;
-        snd.play();
-        setTimeout(() => {
-          snd.currentTime = 0;
-          snd.play();
-        }, 700); // 0.7초 간격으로 2번
-      }catch(e){}
-    }
-
-    function playCallSound(){
-      if (!nurseSoundOn) return;
-      try{
-        const snd = document.getElementById('soundCall');
-        if (!snd) return;
-        snd.currentTime = 0;
-        snd.play();  // 1번 재생
+    
+        // 혹시 남아있는 ended 리스너가 있다면 제거하는 안전 장치 (선택사항)
+        const clone = snd.cloneNode(true);
+        snd.parentNode.replaceChild(clone, snd);
+        const audio = document.getElementById('soundComplete');
+    
+        // 첫 번째 재생
+        audio.currentTime = 0;
+        audio.play();
+    
+        // 첫 번째 재생이 끝난 후 한 번 더 재생 (겹치지 않도록 once 옵션)
+        audio.addEventListener('ended', () => {
+          audio.currentTime = 0;
+          audio.play();
+        }, { once: true });
+    
       }catch(e){}
     }
 
