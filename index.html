@@ -36,8 +36,6 @@
       border:none; border-radius:999px; padding:14px 20px; font-size:18px; cursor:pointer; font-weight:700;
       background:#f1f3f5; box-shadow:0 2px 6px rgba(0,0,0,0.05);
     }
-    .sound-btn.on{ outline:3px solid #4caf50; } 
-    .sound-btn.off{ outline:3px solid #999; background:#f8f8f8; color:#666; }
     .sound-btn.chan.on{ outline:3px solid #4caf50; }
 
     .danger-btn{
@@ -297,7 +295,7 @@
     </div>
   </div>
 
-  <!-- 상단 컨트롤(요일/층/역할/사운드/채널/설정) -->
+  <!-- 상단 컨트롤(요일/층/역할/채널/설정) -->
   <div class="topbar">
     <div class="grow"></div>
 
@@ -318,9 +316,6 @@
       <button class="role-chip" id="role-doctor" onclick="setRole('doctor')">의사</button>
       <button class="role-chip" id="role-nurse"  onclick="setRole('nurse')">간호사</button>
     </div>
-
-    <button id="btnCompleteSound" class="sound-btn on" onclick="toggleCompleteSound()">완료음: ON</button>
-    <button id="btnNurseSound"    class="sound-btn on" onclick="toggleNurseSound()">호출음: ON</button>
 
     <div class="listen-group">
       <span style="font-weight:900;">수신 채널:</span>
@@ -417,16 +412,13 @@
       }
     }
 
-    /* 수신 채널/사운드 설정 */
+    /* 수신 채널 설정 */
     const beep = document.getElementById('beep');
-    let completeSoundOn = JSON.parse(localStorage.getItem('completeSoundOn') || 'true');
-    let nurseSoundOn    = JSON.parse(localStorage.getItem('nurseSoundOn')    || 'true');
     let listenChannels  = JSON.parse(localStorage.getItem('listenChannels')  || '{}');
     listenChannels = Object.assign(Object.fromEntries(DEPTS.map(d=>[d,true])), listenChannels);
 
-    /* ✅ 새 호출음 재생 함수 (1번만 재생) */
+    /* ✅ 새 호출음 재생 함수 (1번만 재생, 역할과 상관없이 호출음은 모두 들음) */
     function playCallSound(){
-      if (!nurseSoundOn) return;
       try{
         const base = document.getElementById('soundCall');
         if (!base) return;
@@ -440,42 +432,37 @@
       }catch(e){}
     }
 
-    /* ✅ 새 완료음 재생 함수 (간호사만 2번 재생) */
+    /* ✅ 새 완료음 재생 함수 (간호사만 들음) */
     function playCompleteSound(){
-      // 🔒 의사 화면에서는 완료음 재생 안 함
+      // 🔒 의사 화면에서는 완료음 재생 안 함 (간호사만)
       if (role !== 'nurse') return;
-      if (!completeSoundOn) return;
       try{
         const snd = document.getElementById('soundComplete');
         if (!snd) return;
-    
-        // 혹시 남아있는 ended 리스너가 있다면 제거하는 안전 장치
+
         const clone = snd.cloneNode(true);
         snd.parentNode.replaceChild(clone, snd);
         const audio = document.getElementById('soundComplete');
-    
-        // 첫 번째 재생
+
         audio.currentTime = 0;
         audio.play();
-    
-        // 첫 번째 재생이 끝난 후 한 번 더 재생 (겹치지 않도록 once 옵션)
         audio.addEventListener('ended', () => {
           audio.currentTime = 0;
           audio.play();
         }, { once: true });
-    
+
       }catch(e){}
     }
 
-    /* (구) 비프 관련 함수는 남겨두되, 더 이상 사용하지 않음 */
     function save(k,v){ localStorage.setItem(k, JSON.stringify(v)); }
-    function applyListenUI(){ DEPTS.forEach(d => { document.querySelector(`.sound-btn.chan[data-dept="${d}"]`)?.classList.toggle('on', !!listenChannels[d]); }); }
-    function applySoundButtons(){
-      const b1 = document.getElementById('btnCompleteSound');
-      const b2 = document.getElementById('btnNurseSound');
-      if (b1) { b1.classList.toggle('on',  completeSoundOn); b1.classList.toggle('off', !completeSoundOn); b1.textContent = `완료음: ${completeSoundOn?'ON':'OFF'}`; }
-      if (b2) { b2.classList.toggle('on',  nurseSoundOn);    b2.classList.toggle('off', !nurseSoundOn);    b2.textContent = `호출음: ${nurseSoundOn?'ON':'OFF'}`; }
+    function applyListenUI(){
+      DEPTS.forEach(d => {
+        document
+          .querySelector(`.sound-btn.chan[data-dept="${d}"]`)
+          ?.classList.toggle('on', !!listenChannels[d]);
+      });
     }
+
     function applyRoleUI(){
       document.getElementById('role-doctor')?.classList.toggle('on', role==='doctor');
       document.getElementById('role-nurse')?.classList.toggle('on',  role==='nurse');
@@ -506,17 +493,30 @@
     }
 
     applyListenUI();
-    applySoundButtons();
     applyRoleUI();
     applyFloorTabs();
     applyDayUI();
 
-    window.toggleCompleteSound = () => { completeSoundOn = !completeSoundOn; save('completeSoundOn',completeSoundOn); applySoundButtons(); };
-    window.toggleNurseSound    = () => { nurseSoundOn    = !nurseSoundOn;    save('nurseSoundOn',nurseSoundOn);    applySoundButtons(); };
-    window.toggleListen = (dept) => { listenChannels[dept] = !listenChannels[dept]; save('listenChannels',listenChannels); applyListenUI(); };
-    window.resetSettings = () => { if (confirm("설정을 모두 초기화하시겠습니까?")) { localStorage.clear(); alert("설정이 초기화되었습니다."); location.reload(); } };
+    window.toggleListen = (dept) => {
+      listenChannels[dept] = !listenChannels[dept];
+      save('listenChannels',listenChannels);
+      applyListenUI();
+    };
+    window.resetSettings = () => {
+      if (confirm("설정을 모두 초기화하시겠습니까?")) {
+        localStorage.clear();
+        alert("설정이 초기화되었습니다.");
+        location.reload();
+      }
+    };
 
-    window.setRole = (r) => { if (r!=='doctor' && r!=='nurse') return; role=r; localStorage.setItem(ROLE_KEY, r); applyRoleUI(); reattachNurseListeners(); };
+    window.setRole = (r) => {
+      if (r!=='doctor' && r!=='nurse') return;
+      role=r;
+      localStorage.setItem(ROLE_KEY, r);
+      applyRoleUI();
+      reattachNurseListeners();
+    };
 
     /* 평일/주말 모드 변경 */
     window.setDayType = (mode) => {
@@ -528,8 +528,13 @@
 
     window.switchFloor = (f) => {
       if (!FLOORS.includes(f)) return;
-      currentFloor = f; localStorage.setItem('currentFloor', f); applyFloorTabs();
-      teardownFloorListeners(); attachFloorListeners(); reattachNurseListeners(); applyRoleUI();
+      currentFloor = f;
+      localStorage.setItem('currentFloor', f);
+      applyFloorTabs();
+      teardownFloorListeners();
+      attachFloorListeners();
+      reattachNurseListeners();
+      applyRoleUI();
     };
 
     function roomPath(){ return `rooms/${currentFloor}`; }
@@ -750,7 +755,7 @@
                 clearInterval(intervals[key]); intervals[key]=null;
                 st.textContent = "완료"; st.className = "pill pill-done";
                 tt.textContent = "";
-                // 완료음: 2번 재생 (간호사 역할에서만)
+                // 완료음: 간호사 역할에서만 재생
                 playCompleteSound();
                 update(ref(db, `${roomPath()}/timers/${key}`), { status: "완료", endAt: null, remaining: 0, ack:false });
                 setCellBlink(key,true);   // 완료 시 붉은색 깜빡임
@@ -813,7 +818,10 @@
     function detachNurseListeners(){ nurseRefs.forEach(r => off(r)); nurseRefs = []; }
     function reattachNurseListeners(){ detachNurseListeners(); attachNurseListeners(); }
 
-    function fmt(sec){ const m=Math.floor(sec/60), s=sec%60; return `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`; }
+    function fmt(sec){
+      const m=Math.floor(sec/60), s=sec%60;
+      return `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+    }
 
     function buildTable(){
       const tbody = document.getElementById("tableBody"); tbody.innerHTML = "";
@@ -839,7 +847,9 @@
         nameTd.className = "name-cell";
         nameTd.textContent = `<${i}번 베드> /`;
         nameTd.contentEditable = true;
-        nameTd.addEventListener("blur", () => { update(ref(db, `${roomPath()}/rows/${i}`), { name: nameTd.textContent }); });
+        nameTd.addEventListener("blur", () => {
+          update(ref(db, `${roomPath()}/rows/${i}`), { name: nameTd.textContent });
+        });
         tr.appendChild(nameTd);
 
         /* 치료 3칸 */
