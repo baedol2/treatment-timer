@@ -424,7 +424,23 @@
     let listenChannels  = JSON.parse(localStorage.getItem('listenChannels')  || '{}');
     listenChannels = Object.assign(Object.fromEntries(DEPTS.map(d=>[d,true])), listenChannels);
 
-    /* ✅ 새 사운드 재생 함수 (간호사만 완료음 듣기) */
+    /* ✅ 새 호출음 재생 함수 (1번만 재생) */
+    function playCallSound(){
+      if (!nurseSoundOn) return;
+      try{
+        const base = document.getElementById('soundCall');
+        if (!base) return;
+        const audio = base.cloneNode(true);
+        base.parentNode.appendChild(audio);
+        audio.currentTime = 0;
+        audio.play();
+        audio.addEventListener('ended', () => {
+          try { audio.remove(); } catch(e){}
+        }, { once:true });
+      }catch(e){}
+    }
+
+    /* ✅ 새 완료음 재생 함수 (간호사만 2번 재생) */
     function playCompleteSound(){
       // 🔒 의사 화면에서는 완료음 재생 안 함
       if (role !== 'nurse') return;
@@ -671,10 +687,7 @@
         const cur = !!(snap.val() && snap.val().on);
         const next = !cur;
         set(cRef, { on: next, at: serverTimestamp() });
-        if (next && listenChannels[dept]) {
-          // 호출음: 1번만 재생
-          playCallSound();
-        }
+        // 🔊 실제 호출음 재생은 각 화면의 nurseCalls 리스너에서 처리
       }, { onlyOnce:true });
     };
 
@@ -790,7 +803,7 @@
           btn.classList.toggle("on", on);
           btn.classList.toggle("blink-btn", on);
           if (on && !wasOn && listenChannels[dept]) {
-            // 호출음: 1번 재생
+            // 🔔 새로운 호출이 들어올 때만 1번 재생
             playCallSound();
           }
           lastCallState2[floor][dept] = on;
