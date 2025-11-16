@@ -71,14 +71,10 @@
     th:nth-child(3), th:nth-child(4), th:nth-child(5){ width:210px; } /* 치료 칸 줄임 */
     th:nth-child(6){ width:240px; } /* 추나 칸 여유 */
 
-    /* 이름 글자 크기 조정 */
+    /* 이름 글자 크게 (2배 정도) */
     .name-cell{
-      font-size:48px;  /* ⬅ 60px 에서 줄임 */
-      font-weight:800; 
-      line-height:1.2; 
-      white-space:nowrap; 
-      overflow:hidden; 
-      text-overflow:ellipsis;
+      font-size:60px;
+      font-weight:800; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
     }
 
     /* ===== 큰 셀 레이아웃(공통) ===== */
@@ -835,8 +831,8 @@
 
         /* 치료 3칸 */
         COLS.forEach((colName, j) => {
-          const key = `r${i}_c#{j}`;
-        const td  = document.createElement("td");
+          const key = `r${i}_c${j}`;
+          const td  = document.createElement("td");
           td.className = "therapy-cell";
           td.dataset.col = colName;
           td.innerHTML = `
