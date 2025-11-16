@@ -11,7 +11,7 @@
       /* 과별 배경색 */
       --dept-west:#d3d3d3;  /* 양방: 회색 */
       --dept-1:#87ceeb;     /* 1과: 하늘색 */
-      --dept-2:#c7ffd6;     /* 2과: 연두색 */
+      --dept-2:#90ee90;     /* 2과: 연두색 */
       --dept-3:#d2b48c;     /* 3과: 갈색(탄 색) */
       --dept-4:#ffc0cb;     /* 4과: 핑크색 */
     }
@@ -348,8 +348,14 @@
     <tbody id="tableBody"></tbody>
   </table>
 
-  <!-- 단일 호출음: 모든 알림 5초 고정 -->
+  <!-- (구) 기본 비프음: 예비용으로만 남김 -->
   <audio id="beep" preload="auto" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"></audio>
+
+  <!-- 새 완료음: 2번 울림 -->
+  <audio id="soundComplete" preload="auto" src="완료음.mp3"></audio>
+
+  <!-- 새 호출음: 1번 울림 -->
+  <audio id="soundCall" preload="auto" src="호출음.mp3"></audio>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
@@ -403,7 +409,7 @@
       const box = document.getElementById("box-"+key);
       if (!box) return;
       if (on){
-        box.style.background = "#ffb3b3"; // 완료 시 빨간색 계열
+        box.style.background = "#ffb3b3";
         box.classList.add("cell-blink");
       } else {
         box.classList.remove("cell-blink");
@@ -418,6 +424,32 @@
     let listenChannels  = JSON.parse(localStorage.getItem('listenChannels')  || '{}');
     listenChannels = Object.assign(Object.fromEntries(DEPTS.map(d=>[d,true])), listenChannels);
 
+    /* ✅ 새 사운드 재생 함수 */
+    function playCompleteSound(){
+      if (!completeSoundOn) return;
+      try{
+        const snd = document.getElementById('soundComplete');
+        if (!snd) return;
+        snd.currentTime = 0;
+        snd.play();
+        setTimeout(() => {
+          snd.currentTime = 0;
+          snd.play();
+        }, 700); // 0.7초 간격으로 2번
+      }catch(e){}
+    }
+
+    function playCallSound(){
+      if (!nurseSoundOn) return;
+      try{
+        const snd = document.getElementById('soundCall');
+        if (!snd) return;
+        snd.currentTime = 0;
+        snd.play();  // 1번 재생
+      }catch(e){}
+    }
+
+    /* (구) 비프 관련 함수는 남겨두되, 더 이상 사용하지 않음 */
     function save(k,v){ localStorage.setItem(k, JSON.stringify(v)); }
     function applyListenUI(){ DEPTS.forEach(d => { document.querySelector(`.sound-btn.chan[data-dept="${d}"]`)?.classList.toggle('on', !!listenChannels[d]); }); }
     function applySoundButtons(){
@@ -616,7 +648,7 @@
       }
     };
 
-    /* ===== 단일 호출음 5초 고정 ===== */
+    /* (구) 비프 5초 재생 함수 - 현재는 사용 안 함 */
     function playBeepOnce(){ try{ beep.currentTime = 0; beep.play(); }catch(e){} }
     function playBeepFor5Sec(enabled){
       if (!enabled) return;
@@ -637,7 +669,10 @@
         const cur = !!(snap.val() && snap.val().on);
         const next = !cur;
         set(cRef, { on: next, at: serverTimestamp() });
-        if (next && nurseSoundOn && listenChannels[dept]) playBeepFor5Sec(true);
+        if (next && listenChannels[dept]) {
+          // 호출음: 1번만 재생
+          playCallSound();
+        }
       }, { onlyOnce:true });
     };
 
@@ -700,7 +735,8 @@
                 clearInterval(intervals[key]); intervals[key]=null;
                 st.textContent = "완료"; st.className = "pill pill-done";
                 tt.textContent = "";
-                if (completeSoundOn) playBeepFor5Sec(true);
+                // 완료음: 2번 재생
+                playCompleteSound();
                 update(ref(db, `${roomPath()}/timers/${key}`), { status: "완료", endAt: null, remaining: 0, ack:false });
                 setCellBlink(key,true);   // 완료 시 붉은색 깜빡임
               }
@@ -751,7 +787,10 @@
           const wasOn = lastCallState2[floor][dept];
           btn.classList.toggle("on", on);
           btn.classList.toggle("blink-btn", on);
-          if (on && !wasOn && nurseSoundOn && listenChannels[dept]) playBeepFor5Sec(true);
+          if (on && !wasOn && listenChannels[dept]) {
+            // 호출음: 1번 재생
+            playCallSound();
+          }
           lastCallState2[floor][dept] = on;
         });
       }));
