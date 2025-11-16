@@ -71,7 +71,7 @@
     th:nth-child(3), th:nth-child(4), th:nth-child(5){ width:210px; } /* 치료 칸 줄임 */
     th:nth-child(6){ width:240px; } /* 추나 칸 여유 */
 
-    /* 이름 글자 더 크게 (2배 확대) */
+    /* 이름 글자 크게 (2배 정도) */
     .name-cell{
       font-size:60px;
       font-weight:800; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
@@ -150,9 +150,9 @@
       width:100%;
       display:flex;
       flex-wrap:wrap;
-      gap:40px 150px;            /* 그룹 간 간격 */
+      gap:40px 40px;            /* 그룹 간 간격 */
       align-items:center;
-      justify-content:space-between; /* 1층 왼쪽, 2층 오른쪽 */
+      justify-content:center;
     }
     .call-group{
       display:flex; align-items:center; gap:48px; padding:18px 22px; background:#fff; border-radius:14px;
@@ -172,6 +172,18 @@
     }
     .btn-call.on{ outline:3px solid #ff4d4f; background:#ffe6e6; }
     .btn-call[disabled]{ opacity:.45; cursor:not-allowed; }
+
+    /* 로고 가운데 */
+    .logo-wrap{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:8px 16px;
+    }
+    .logo-img{
+      height:60px;   /* 필요하면 높이만 조절해서 쓰시면 됩니다 */
+      object-fit:contain;
+    }
 
     /* ▶ 호출 버튼 깜빡임 액션 크게 */
     @keyframes blinkBtn{
@@ -198,10 +210,11 @@
     tbody > tr > td { padding:8px; }
 
     @media (max-width:1100px){
-      .call-inline{ gap:24px 40px; }
+      .call-inline{ gap:24px 24px; }
       .btn-call{ padding:16px 22px; font-size:24px; min-width:70px; }
       .mini-btn{ height:76px; font-size:28px; padding:20px 24px; }
       .btn-adjust{ height:52px; font-size:24px; }
+      .logo-img{ height:48px; }
     }
 
     /* ✅ 호출 UI 층별 색상 */
@@ -257,7 +270,7 @@
   <!-- 제목 아래: 스크롤 고정 호출 UI -->
   <div class="call-sticky">
     <div class="call-inline">
-      <!-- ✅ 1층 그룹 (왼쪽) -->
+      <!-- ✅ 1층 그룹 -->
       <div class="call-group call-1F">
         <span class="call-label">1층:</span>
         <button class="btn-call" id="call-1F-1과" title="1층-1과" onclick="toggleCall('1F','1과')">1</button>
@@ -267,7 +280,13 @@
         <button class="btn-call" id="call-1F-양방" title="1층-양방" onclick="toggleCall('1F','양방')">양</button>
       </div>
 
-      <!-- ✅ 2층 그룹 (오른쪽) -->
+      <!-- 가운데 병원 로고 -->
+      <div class="logo-wrap">
+        <!-- 실제 업로드하신 로고 파일 경로로 src를 바꿔서 사용하세요 -->
+        <img src="logo_seongmo.png" alt="성모사랑한방병원 로고" class="logo-img">
+      </div>
+
+      <!-- ✅ 2층 그룹 -->
       <div class="call-group call-2F">
         <span class="call-label">2층:</span>
         <button class="btn-call" id="call-2F-1과" title="2층-1과" onclick="toggleCall('2F','1과')">1</button>
