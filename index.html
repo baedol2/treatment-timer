@@ -432,76 +432,33 @@
       }catch(e){}
     }
 
-    /* ✅ 완료음 재생 관련 상태 */
-    let completePlaying = false;
-
-    /* ✅ 새 완료음 재생 함수 (간호사만 들음, 2번 연속 재생) */
+    /* ✅ 새 완료음 재생 함수 (간호사만 들음) */
     function playCompleteSound(){
-      // 의사 화면에서는 완료음 재생 안 함 (간호사만)
+      // 🔒 의사 화면에서는 완료음 재생 안 함 (간호사만)
       if (role !== 'nurse') return;
+      try{
+        const snd = document.getElementById('soundComplete');
+        if (!snd) return;
 
-      const audio = document.getElementById('soundComplete');
-      if (!audio) return;
+        const clone = snd.cloneNode(true);
+        snd.parentNode.replaceChild(clone, snd);
+        const audio = document.getElementById('soundComplete');
 
-      // 이미 재생 중이면 중복 재생 방지
-      if (completePlaying) return;
-      completePlaying = true;
-
-      audio.currentTime = 0;
-      audio.play().then(() => {
-        // 1번 재생이 끝난 뒤 한 번 더 재생
-        audio.onended = () => {
-          audio.onended = null;
+        audio.currentTime = 0;
+        audio.play();
+        audio.addEventListener('ended', () => {
           audio.currentTime = 0;
-          audio.play().finally(() => {
-            completePlaying = false;
-          });
-        };
-      }).catch(err => {
-        console.warn('완료음 재생 실패:', err);
-        completePlaying = false;
-      });
+          audio.play();
+        }, { once: true });
+
+      }catch(e){}
     }
-
-    /* ✅ 오디오 자동재생 차단 우회: 첫 사용자 동작에서 한 번만 모두 잠금 해제 */
-    let audioUnlocked = false;
-
-    function unlockAllAudio() {
-      if (audioUnlocked) return;
-      audioUnlocked = true;
-
-      const audioIds = ['soundComplete', 'soundCall', 'beep'];
-
-      audioIds.forEach(id => {
-        const el = document.getElementById(id);
-        if (!el) return;
-
-        el.muted = true;  // 일단 음소거한 상태로 살짝 재생
-        const p = el.play();
-        if (p && p.then) {
-          p.then(() => {
-            el.pause();
-            el.currentTime = 0;
-            el.muted = false;  // 다시 음소거 해제
-          }).catch(err => {
-            console.warn(id + ' 오디오 잠금 해제 실패:', err);
-          });
-        }
-      });
-
-      console.log('모든 오디오 잠금 해제 시도 완료');
-    }
-
-    // 사용자의 첫 상호작용(클릭/터치/키보드)에서 한 번만 실행
-    document.addEventListener('click',      unlockAllAudio, { once: true });
-    document.addEventListener('touchstart', unlockAllAudio, { once: true });
-    document.addEventListener('keydown',    unlockAllAudio, { once: true });
 
     function save(k,v){ localStorage.setItem(k, JSON.stringify(v)); }
     function applyListenUI(){
       DEPTS.forEach(d => {
         document
-          .querySelector(.sound-btn.chan[data-dept="${d}"])
+          .querySelector(`.sound-btn.chan[data-dept="${d}"]`)
           ?.classList.toggle('on', !!listenChannels[d]);
       });
     }
@@ -511,7 +468,7 @@
       document.getElementById('role-nurse')?.classList.toggle('on',  role==='nurse');
       FLOORS.forEach(f=>{
         DEPTS.forEach(d=>{
-          const btn = document.getElementById(call-${f}-${d});
+          const btn = document.getElementById(`call-${f}-${d}`);
           if (!btn) return;
           if (role==='nurse'){
             const enable = (f === currentFloor);
@@ -580,7 +537,7 @@
       applyRoleUI();
     };
 
-    function roomPath(){ return rooms/${currentFloor}; }
+    function roomPath(){ return `rooms/${currentFloor}`; }
 
     // 양방 선택 시: 침치료 셀 폭은 유지하고 안쪽 박스만 숨김
     function updateYangbangCell(rowIndex, dept){
@@ -596,15 +553,15 @@
     }
 
     window.changeDoctor = (rowIndex, dept) => {
-      update(ref(db, ${roomPath()}/rows/${rowIndex}), { dept });
+      update(ref(db, `${roomPath()}/rows/${rowIndex}`), { dept });
       const tr = document.getElementById("row-"+rowIndex);
       if (tr) tr.style.background = deptColors[dept] || "";
       updateYangbangCell(rowIndex, dept);
 
       // 양방 선택 시 침치료 타이머도 초기화
       if (dept === "양방"){
-        const key = r${rowIndex}_c2; // 침치료
-        update(ref(db, ${roomPath()}/timers/${key}), {
+        const key = `r${rowIndex}_c2`; // 침치료
+        update(ref(db, `${roomPath()}/timers/${key}`), {
           status:"대기", endAt:null, remaining:0, ack:false
         });
         setCellBlink(key,false);
@@ -614,7 +571,7 @@
     /* ===== 타이머 조작 ===== */
     window.startTimer = (key, colName) => {
       const baseMin = DEFAULT_MINUTES;
-      const tRef = ref(db, ${roomPath()}/timers/${key});
+      const tRef = ref(db, `${roomPath()}/timers/${key}`);
       update(tRef, { colName, status: "진행" });
       onValue(tRef, (snap) => {
         const v = snap.val() || {};
@@ -624,12 +581,12 @@
       }, { onlyOnce: true });
     };
     window.stopTimer = (key) => {
-      const tRef = ref(db, ${roomPath()}/timers/${key});
+      const tRef = ref(db, `${roomPath()}/timers/${key}`);
       update(tRef, { status: "대기", endAt: null, remaining: 0, ack:false });
       setCellBlink(key,false);
     };
     window.adjustTime = (key, diffSec) => {
-      const tRef = ref(db, ${roomPath()}/timers/${key});
+      const tRef = ref(db, `${roomPath()}/timers/${key}`);
       onValue(tRef, (snap) => {
         const v = snap.val() || {};
         const diffMs = diffSec * 1000;
@@ -646,7 +603,7 @@
 
     /* ===== 박스 클릭: 완료 시 1번 터치=깜빡이기만 해제, 2번 터치=기본시간 리셋 ===== */
     window.onBoxClick = (key) => {
-      const tRef = ref(db, ${roomPath()}/timers/${key});
+      const tRef = ref(db, `${roomPath()}/timers/${key}`);
       onValue(tRef, (snap) => {
         const v = snap.val() || {};
         const status = v.status || "대기";
@@ -667,7 +624,7 @@
 
     /* ===== 추나 O/X ===== */
     window.toggleChuna = (key, onFlag) => {
-      set(ref(db, ${roomPath()}/chuna/${key}), { on:onFlag, at: serverTimestamp() });
+      set(ref(db, `${roomPath()}/chuna/${key}`), { on:onFlag, at: serverTimestamp() });
     };
 
     /* ===== 행 초기화 ===== */
@@ -675,15 +632,15 @@
       const basePath = roomPath();
 
       // 행 기본 정보 초기화
-      update(ref(db, ${basePath}/rows/${rowIndex}), {
+      update(ref(db, `${basePath}/rows/${rowIndex}`), {
         dept:"",
         name:""
       });
 
       // 3개 치료 타이머 초기화
       COLS.forEach((colName, j) => {
-        const key = r${rowIndex}_c${j};
-        update(ref(db, ${basePath}/timers/${key}), {
+        const key = `r${rowIndex}_c${j}`;
+        update(ref(db, `${basePath}/timers/${key}`), {
           status:"대기",
           endAt:null,
           remaining:0,
@@ -693,8 +650,8 @@
       });
 
       // 추나 초기화
-      const chunaKey = r${rowIndex}_c3;
-      set(ref(db, ${basePath}/chuna/${chunaKey}), {
+      const chunaKey = `r${rowIndex}_c3`;
+      set(ref(db, `${basePath}/chuna/${chunaKey}`), {
         on:false,
         at: serverTimestamp()
       });
@@ -708,7 +665,7 @@
         tr.classList.add("no-doctor");
 
         const nameTd = tr.children[1];
-        if (nameTd) nameTd.textContent = <${rowIndex}번 베드> /;
+        if (nameTd) nameTd.textContent = `<${rowIndex}번 베드> /`;
 
         updateYangbangCell(rowIndex, "");
       }
@@ -730,21 +687,21 @@
     /* ===== 호출 토글 ===== */
     window.toggleCall = (floor, dept) => {
       if (role==='nurse' && floor !== currentFloor) return; // 간호사는 자기 층만
-      const cRef = ref(db, rooms/${floor}/nurseCalls/${dept});
+      const cRef = ref(db, `rooms/${floor}/nurseCalls/${dept}`);
       onValue(cRef, (snap)=>{
         const cur = !!(snap.val() && snap.val().on);
         const next = !cur;
         set(cRef, { on: next, at: serverTimestamp() });
-        // 실제 호출음 재생은 각 화면의 nurseCalls 리스너에서 처리
+        // 🔊 실제 호출음 재생은 각 화면의 nurseCalls 리스너에서 처리
       }, { onlyOnce:true });
     };
 
     /* ===== 층 데이터 리스너 ===== */
     let floorRefs = [];
     function attachFloorListeners(){
-      const rowsRef   = ref(db, ${roomPath()}/rows);
-      const timersRef = ref(db, ${roomPath()}/timers);
-      const chunaRef  = ref(db, ${roomPath()}/chuna);
+      const rowsRef   = ref(db, `${roomPath()}/rows`);
+      const timersRef = ref(db, `${roomPath()}/timers`);
+      const chunaRef  = ref(db, `${roomPath()}/chuna`);
       floorRefs = [rowsRef, timersRef, chunaRef];
 
       onValue(rowsRef, (snap) => {
@@ -764,7 +721,7 @@
           updateYangbangCell(i, r.dept || "");
 
           const nameTd = tr.children[1];
-          const placeholder = <${i}번 베드> /;
+          const placeholder = `<${i}번 베드> /`;
           if (typeof r.name === "string" && r.name.length>0){
             if (nameTd.textContent !== r.name) nameTd.textContent = r.name;
           } else {
@@ -800,7 +757,7 @@
                 tt.textContent = "";
                 // 완료음: 간호사 역할에서만 재생
                 playCompleteSound();
-                update(ref(db, ${roomPath()}/timers/${key}), { status: "완료", endAt: null, remaining: 0, ack:false });
+                update(ref(db, `${roomPath()}/timers/${key}`), { status: "완료", endAt: null, remaining: 0, ack:false });
                 setCellBlink(key,true);   // 완료 시 붉은색 깜빡임
               }
             };
@@ -822,7 +779,7 @@
       onValue(chunaRef, (snap) => {
         const data = snap.val() || {};
         for (let i=1;i<=ROW_COUNT;i++){
-          const key = r${i}_c3;
+          const key = `r${i}_c3`;
           const on = !!(data[key] && data[key].on);
           const st = document.getElementById("status-"+key);
           const oBtn = document.getElementById("ox-on-"+key);
@@ -839,19 +796,19 @@
     /* ===== 간호사 호출 수신 리스너 (두 층 모두) ===== */
     let nurseRefs = [];
     function attachNurseListeners(){
-      nurseRefs = FLOORS.map(f => ref(db, rooms/${f}/nurseCalls));
+      nurseRefs = FLOORS.map(f => ref(db, `rooms/${f}/nurseCalls`));
       nurseRefs.forEach((rf, idx) => onValue(rf, (snap)=>{
         const floor = FLOORS[idx];
         const c = snap.val() || {};
         DEPTS.forEach(dept=>{
           const on = !!(c[dept] && c[dept].on);
-          const btn = document.getElementById(call-${floor}-${dept});
+          const btn = document.getElementById(`call-${floor}-${dept}`);
           if (!btn) return;
           const wasOn = lastCallState2[floor][dept];
           btn.classList.toggle("on", on);
           btn.classList.toggle("blink-btn", on);
           if (on && !wasOn && listenChannels[dept]) {
-            // 새로운 호출이 들어올 때만 1번 재생
+            // 🔔 새로운 호출이 들어올 때만 1번 재생
             playCallSound();
           }
           lastCallState2[floor][dept] = on;
@@ -863,7 +820,7 @@
 
     function fmt(sec){
       const m=Math.floor(sec/60), s=sec%60;
-      return ${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")};
+      return `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
     }
 
     function buildTable(){
@@ -875,33 +832,33 @@
 
         /* 담당(주치의 선택) */
         const docTd = document.createElement("td");
-        docTd.innerHTML = 
+        docTd.innerHTML = `
           <div>
             <select class="doctor" style="width:100%;padding:12px 14px;font-size:30px;border-radius:10px;"
               onchange="changeDoctor(${i}, this.value)">
               <option value="">선택</option>
-              ${DEPTS.map(d=><option value="${d}">${d}</option>).join('')}
+              ${DEPTS.map(d=>`<option value="${d}">${d}</option>`).join('')}
             </select>
-          </div>;
+          </div>`;
         tr.appendChild(docTd);
 
         /* 이름 */
         const nameTd = document.createElement("td");
         nameTd.className = "name-cell";
-        nameTd.textContent = <${i}번 베드> /;
+        nameTd.textContent = `<${i}번 베드> /`;
         nameTd.contentEditable = true;
         nameTd.addEventListener("blur", () => {
-          update(ref(db, ${roomPath()}/rows/${i}), { name: nameTd.textContent });
+          update(ref(db, `${roomPath()}/rows/${i}`), { name: nameTd.textContent });
         });
         tr.appendChild(nameTd);
 
         /* 치료 3칸 */
         COLS.forEach((colName, j) => {
-          const key = r${i}_c${j};
+          const key = `r${i}_c${j}`;
           const td  = document.createElement("td");
           td.className = "therapy-cell";
           td.dataset.col = colName;
-          td.innerHTML = 
+          td.innerHTML = `
             <div class="status-box" id="box-${key}" onclick="onBoxClick('${key}')">
               <div class="left-col">
                 <span class="pill pill-wait" id="status-${key}">대기</span>
@@ -915,15 +872,15 @@
                   <button class="btn-adjust" onclick="adjustTime('${key}',-30); event.stopPropagation();">-</button>
                 </div>
               </div>
-            </div>;
+            </div>`;
           tr.appendChild(td);
         });
 
         /* 추나 */
-        const chunaKey = r${i}_c3;
+        const chunaKey = `r${i}_c3`;
         const chunaTd  = document.createElement("td");
         chunaTd.className = "chuna-cell";
-        chunaTd.innerHTML = 
+        chunaTd.innerHTML = `
           <div class="chuna-box" id="box-${chunaKey}">
             <div class="left-col">
               <span class="pill pill-wait" id="status-${chunaKey}" style="font-size:20px;">대기</span>
@@ -933,7 +890,7 @@
               <button class="ox-btn" id="ox-off-${chunaKey}" onclick="toggleChuna('${chunaKey}', false)">X</button>
               <button class="reset-btn" onclick="resetRow(${i})">초기화</button>
             </div>
-          </div>;
+          </div>`;
         tr.appendChild(chunaTd);
 
         tbody.appendChild(tr);
