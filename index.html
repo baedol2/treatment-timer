@@ -47,8 +47,13 @@
 
     .floor-tab{ border:none; border-radius:999px; padding:12px 18px; font-size:18px; cursor:pointer; background:#fff; }
     .floor-tab.on{ outline:3px solid #6c5ce7; background:#eee; }
+
     .role-chip{ border:none; border-radius:999px; padding:12px 18px; font-size:18px; cursor:pointer; background:#fff; }
     .role-chip.on{ outline:3px solid #00c853; background:#eaffea; }
+
+    /* 요일 선택 버튼 */
+    .day-chip{ border:none; border-radius:999px; padding:12px 18px; font-size:18px; cursor:pointer; background:#fff; }
+    .day-chip.on{ outline:3px solid #ff9800; background:#fff3e0; }
 
     table{ width:100%; border-collapse:collapse; background:#fff; box-shadow:0 2px 8px rgba(0,0,0,0.03); }
     /* ◆ 헤더 배경색 남색 + 글씨 크게 */
@@ -66,9 +71,9 @@
     th:nth-child(3), th:nth-child(4), th:nth-child(5){ width:210px; } /* 치료 칸 줄임 */
     th:nth-child(6){ width:240px; } /* 추나 칸 여유 */
 
-    /* 이름 글자 더 크게 */
+    /* 이름 글자 더 크게 (2배 확대) */
     .name-cell{
-      font-size:30px;
+      font-size:60px;
       font-weight:800; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
     }
 
@@ -237,6 +242,12 @@
     /* ✅ 담당(주치의) 미선택 행: 시간표시 + 버튼 열 숨김 */
     tr.no-doctor .time-text{ display:none; }
     tr.no-doctor .right-col{ display:none; }
+
+    /* ✅ 주말 모드: 물리치료(4번째 열) 숨김 */
+    body.weekend-mode #timerTable th:nth-child(4),
+    body.weekend-mode #timerTable td:nth-child(4){
+      display:none;
+    }
   </style>
 </head>
 <body>
@@ -268,9 +279,16 @@
     </div>
   </div>
 
-  <!-- 상단 컨트롤(층/역할/사운드/채널/설정) -->
+  <!-- 상단 컨트롤(요일/층/역할/사운드/채널/설정) -->
   <div class="topbar">
     <div class="grow"></div>
+
+    <!-- 요일 선택: 평일 / 주말 -->
+    <div style="display:flex;gap:8px;align-items:center;">
+      <span style="font-weight:900;">요일:</span>
+      <button class="day-chip" id="day-weekday" onclick="setDayType('weekday')">평일</button>
+      <button class="day-chip" id="day-weekend" onclick="setDayType('weekend')">주말</button>
+    </div>
 
     <div style="display:flex;gap:8px;align-items:center;">
       <button class="floor-tab" id="tab-1F" onclick="switchFloor('1F')">1층</button>
@@ -341,6 +359,10 @@
     if (roleParam === 'doctor' || roleParam === 'nurse') localStorage.setItem(ROLE_KEY, roleParam);
     let role = (localStorage.getItem(ROLE_KEY) || 'doctor'); // doctor | nurse
 
+    /* 평일/주말 모드 */
+    const DAY_KEY = 'ttb_dayType';
+    let dayType = localStorage.getItem(DAY_KEY) || 'weekday';
+
     /* 기본 시간: UI 제거 → 저장된 값이 있으면 사용, 기본은 10분 */
     let DEFAULT_MINUTES = parseInt(localStorage.getItem('defaultMinutes') || '10', 10);
     const ROW_COUNT = 12;
@@ -405,7 +427,21 @@
     }
     function applyFloorTabs(){ FLOORS.forEach(f => document.getElementById('tab-'+f)?.classList.toggle('on', f===currentFloor)); }
 
-    applyListenUI(); applySoundButtons(); applyRoleUI(); applyFloorTabs();
+    /* 평일/주말 UI 및 모드 적용 */
+    function applyDayUI(){
+      const weekdayBtn = document.getElementById('day-weekday');
+      const weekendBtn = document.getElementById('day-weekend');
+      if (weekdayBtn) weekdayBtn.classList.toggle('on', dayType === 'weekday');
+      if (weekendBtn) weekendBtn.classList.toggle('on', dayType === 'weekend');
+
+      document.body.classList.toggle('weekend-mode', dayType === 'weekend');
+    }
+
+    applyListenUI();
+    applySoundButtons();
+    applyRoleUI();
+    applyFloorTabs();
+    applyDayUI();
 
     window.toggleCompleteSound = () => { completeSoundOn = !completeSoundOn; save('completeSoundOn',completeSoundOn); applySoundButtons(); };
     window.toggleNurseSound    = () => { nurseSoundOn    = !nurseSoundOn;    save('nurseSoundOn',nurseSoundOn);    applySoundButtons(); };
@@ -413,6 +449,15 @@
     window.resetSettings = () => { if (confirm("설정을 모두 초기화하시겠습니까?")) { localStorage.clear(); alert("설정이 초기화되었습니다."); location.reload(); } };
 
     window.setRole = (r) => { if (r!=='doctor' && r!=='nurse') return; role=r; localStorage.setItem(ROLE_KEY, r); applyRoleUI(); reattachNurseListeners(); };
+
+    /* 평일/주말 모드 변경 */
+    window.setDayType = (mode) => {
+      if (mode !== 'weekday' && mode !== 'weekend') return;
+      dayType = mode;
+      localStorage.setItem(DAY_KEY, mode);
+      applyDayUI();
+    };
+
     window.switchFloor = (f) => {
       if (!FLOORS.includes(f)) return;
       currentFloor = f; localStorage.setItem('currentFloor', f); applyFloorTabs();
@@ -770,7 +815,9 @@
       }
     }
 
-    buildTable(); attachFloorListeners(); attachNurseListeners();
+    buildTable();
+    attachFloorListeners();
+    attachNurseListeners();
   </script>
 </body>
 </html>
