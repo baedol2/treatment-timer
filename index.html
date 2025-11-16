@@ -347,7 +347,7 @@
   <audio id="beep" preload="auto" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"></audio>
 
   <!-- 새 완료음: 2번 울림 -->
-  <audio id="soundComplete" preload="auto" src="완료음.mp3"></audio>
+  <audio id="soundComplete" preload="auto" src="https://actions.google.com/sounds/v1/alarms/bugle_tune.ogg"></audio>
 
   <!-- 새 호출음: 1번 울림 -->
   <audio id="soundCall" preload="auto" src="호출음.mp3"></audio>
@@ -434,33 +434,29 @@
 
     /* ✅ 완료음 재생 관련 상태 */
     let completePlaying = false;
-
-    /* ✅ 새 완료음 재생 함수 (간호사만 들음, 2번 연속 재생) */
+    
+    /* ✅ 새 완료음 재생 함수 (간호사만 들음, 1번만 재생) */
     function playCompleteSound(){
       // 의사 화면에서는 완료음 재생 안 함 (간호사만)
       if (role !== 'nurse') return;
-
+    
       const audio = document.getElementById('soundComplete');
       if (!audio) return;
-
+    
       // 이미 재생 중이면 중복 재생 방지
       if (completePlaying) return;
       completePlaying = true;
-
+    
       audio.currentTime = 0;
-      audio.play().then(() => {
-        // 1번 재생이 끝난 뒤 한 번 더 재생
-        audio.onended = () => {
-          audio.onended = null;
-          audio.currentTime = 0;
-          audio.play().finally(() => {
-            completePlaying = false;
-          });
-        };
-      }).catch(err => {
-        console.warn('완료음 재생 실패:', err);
+      const p = audio.play();
+      if (p && p.then){
+        p.finally(() => {
+          completePlaying = false;
+        });
+      } else {
+        // 혹시 Promise를 지원하지 않는 환경 대비
         completePlaying = false;
-      });
+      }
     }
 
     /* ✅ 오디오 자동재생 차단 우회: 첫 사용자 동작에서 한 번만 모두 잠금 해제 */
