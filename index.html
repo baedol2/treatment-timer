@@ -424,57 +424,34 @@
     let listenChannels  = JSON.parse(localStorage.getItem('listenChannels')  || '{}');
     listenChannels = Object.assign(Object.fromEntries(DEPTS.map(d=>[d,true])), listenChannels);
 
-    // ✅ 완료음 재생 중복 방지용 플래그
-    let isCompleteSoundPlaying = false;
-
-    /* ✅ 새 완료음 재생 함수 (처음 겹침 방지 + 총 2번 재생) */
+    /* ✅ 새 사운드 재생 함수 (간호사만 완료음 듣기) */
     function playCompleteSound(){
+      // 🔒 의사 화면에서는 완료음 재생 안 함
+      if (role !== 'nurse') return;
       if (!completeSoundOn) return;
-
-      const audio = document.getElementById('soundComplete');
-      if (!audio) return;
-
-      // 이미 완료음을 재생 중이면 추가 호출 무시 → 시작 부분 겹침 방지
-      if (isCompleteSoundPlaying) return;
-      isCompleteSoundPlaying = true;
-
-      let playCount = 0;
-
-      const playOnce = () => {
+      try{
+        const snd = document.getElementById('soundComplete');
+        if (!snd) return;
+    
+        // 혹시 남아있는 ended 리스너가 있다면 제거하는 안전 장치
+        const clone = snd.cloneNode(true);
+        snd.parentNode.replaceChild(clone, snd);
+        const audio = document.getElementById('soundComplete');
+    
+        // 첫 번째 재생
         audio.currentTime = 0;
-        audio.play().catch(() => {
-          // 재생 실패 시 플래그 해제
-          isCompleteSoundPlaying = false;
-          audio.onended = null;
-        });
-      };
-
-      audio.onended = () => {
-        playCount++;
-        if (playCount < 2 && completeSoundOn){
-          // 첫 재생 끝 → 한 번 더 재생
-          playOnce();
-        } else {
-          // 두 번째 재생까지 끝났으면 정리
-          isCompleteSoundPlaying = false;
-          audio.onended = null;
-        }
-      };
-
-      // 첫 재생 시작
-      playOnce();
+        audio.play();
+    
+        // 첫 번째 재생이 끝난 후 한 번 더 재생 (겹치지 않도록 once 옵션)
+        audio.addEventListener('ended', () => {
+          audio.currentTime = 0;
+          audio.play();
+        }, { once: true });
+    
+      }catch(e){}
     }
 
-    /* ✅ 호출음: 1번만 재생 */
-    function playCallSound(){
-      if (!nurseSoundOn) return;
-      const audio = document.getElementById('soundCall');
-      if (!audio) return;
-      audio.currentTime = 0;
-      audio.play().catch(()=>{});
-    }
-
-    /* (구) 비프 관련 함수는 남겨두되, 더 이상 사용하지 않음 + 공용 설정 함수들 */
+    /* (구) 비프 관련 함수는 남겨두되, 더 이상 사용하지 않음 */
     function save(k,v){ localStorage.setItem(k, JSON.stringify(v)); }
     function applyListenUI(){ DEPTS.forEach(d => { document.querySelector(`.sound-btn.chan[data-dept="${d}"]`)?.classList.toggle('on', !!listenChannels[d]); }); }
     function applySoundButtons(){
@@ -695,7 +672,7 @@
         const next = !cur;
         set(cRef, { on: next, at: serverTimestamp() });
         if (next && listenChannels[dept]) {
-          // 호출음: 1번 재생
+          // 호출음: 1번만 재생
           playCallSound();
         }
       }, { onlyOnce:true });
@@ -760,7 +737,7 @@
                 clearInterval(intervals[key]); intervals[key]=null;
                 st.textContent = "완료"; st.className = "pill pill-done";
                 tt.textContent = "";
-                // 완료음: 2번 재생
+                // 완료음: 2번 재생 (간호사 역할에서만)
                 playCompleteSound();
                 update(ref(db, `${roomPath()}/timers/${key}`), { status: "완료", endAt: null, remaining: 0, ack:false });
                 setCellBlink(key,true);   // 완료 시 붉은색 깜빡임
