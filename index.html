@@ -899,7 +899,7 @@
         const docTd = document.createElement("td");
         docTd.innerHTML = `
           <div>
-            <select class="doctor" style="width:100%;padding:12px 14px;font-size:50px;border-radius:10px;"
+            <select class="doctor" style="width:100%;padding:12px 14px;font-size:50px;font-weight:900;border-radius:10px;"
               onchange="changeDoctor(${i}, this.value)">
               <option value="">선택</option>
               ${DEPTS.map(d=>`<option value="${d}">${d}</option>`).join('')}
