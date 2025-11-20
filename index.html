@@ -346,7 +346,7 @@
   <!-- (구) 기본 비프음: 예비용으로만 남김 -->
   <audio id="beep" preload="auto" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"></audio>
 
-  <!-- 새 완료음: 2번 울림 -->
+  <!-- 새 완료음: 2번 울림 (현재는 JS에서 2회 반복 재생) -->
   <audio id="soundComplete" preload="auto" src="완료음.mp3"></audio>
 
   <!-- 새 호출음: 1번 울림 -->
@@ -397,7 +397,12 @@
     };
 
     const intervals = {};
-    const lastCallState2 = { "1F": Object.fromEntries(DEPTS.map(d=>[d,false])), "2F": Object.fromEntries(DEPTS.map(d=>[d,false])) };
+    const lastStatusMap = {};   // ✅ 각 타이머의 이전 status 관리
+
+    const lastCallState2 = {
+      "1F": Object.fromEntries(DEPTS.map(d=>[d,false])),
+      "2F": Object.fromEntries(DEPTS.map(d=>[d,false]))
+    };
 
     /* ✅ 완료 셀 깜빡임 상태 관리: 완료 시 붉은색 계열로 통일 */
     function setCellBlink(key, on){
@@ -480,7 +485,11 @@
         });
       });
     }
-    function applyFloorTabs(){ FLOORS.forEach(f => document.getElementById('tab-'+f)?.classList.toggle('on', f===currentFloor)); }
+    function applyFloorTabs(){
+      FLOORS.forEach(f =>
+        document.getElementById('tab-'+f)?.classList.toggle('on', f===currentFloor)
+      );
+    }
 
     /* 평일/주말 UI 및 모드 적용 */
     function applyDayUI(){
@@ -576,7 +585,9 @@
       onValue(tRef, (snap) => {
         const v = snap.val() || {};
         const now = Date.now();
-        const remainMs = (typeof v.remaining === "number" && v.remaining > 0) ? v.remaining * 1000 : baseMin * 60 * 1000;
+        const remainMs = (typeof v.remaining === "number" && v.remaining > 0)
+          ? v.remaining * 1000
+          : baseMin * 60 * 1000;
         update(tRef, { endAt: now + remainMs, status: "진행", ack:false });
       }, { onlyOnce: true });
     };
@@ -704,6 +715,14 @@
       const chunaRef  = ref(db, `${roomPath()}/chuna`);
       floorRefs = [rowsRef, timersRef, chunaRef];
 
+      // ✅ 층 바뀔 때마다 상태/타이머 초기화
+      window._timersInitialLoaded = false;
+      Object.keys(lastStatusMap).forEach(k => delete lastStatusMap[k]);
+      Object.keys(intervals).forEach(k => {
+        if (intervals[k]) clearInterval(intervals[k]);
+        intervals[k] = null;
+      });
+
       onValue(rowsRef, (snap) => {
         const rows = snap.val() || {};
         for (let i=1;i<=ROW_COUNT;i++){
@@ -730,50 +749,93 @@
         }
       });
 
+      // ✅ 타이머 상태/완료 처리
       onValue(timersRef, (snap) => {
         const timers = snap.val() || {};
+
+        if (typeof window._timersInitialLoaded === "undefined") {
+          window._timersInitialLoaded = false;
+        }
+
         Object.entries(timers).forEach(([key, v]) => {
-          const st = document.getElementById("status-"+key);
-          const tt = document.getElementById("time-"+key);
+          const st  = document.getElementById("status-"+key);
+          const tt  = document.getElementById("time-"+key);
           const box = document.getElementById("box-"+key);
           if (!st || !tt || !box) return;
 
           const status = v.status || "대기";
           const ack    = !!v.ack;
 
+          // ✅ 이전 status → 완료로 "변한 순간" 감지
+          const prevStatus = lastStatusMap[key] ?? null;
+          lastStatusMap[key] = status;
+
+          // ✅ 완료로 바뀌는 순간 + 간호사 모드 + 아직 확인 전(ack=false) → 완료음 재생
+          if (window._timersInitialLoaded &&
+              status === "완료" &&
+              prevStatus !== "완료" &&
+              !ack &&
+              role === "nurse") {
+            playCompleteSound();
+          }
+
+          // UI 기본 설정
           st.textContent = status;
-          st.className = "pill " + (status==="진행" ? "pill-run" : status==="완료" ? "pill-done" : "pill-wait");
-          setCellBlink(key,false);
+          st.className = "pill " + (
+            status === "진행" ? "pill-run" :
+            status === "완료" ? "pill-done" :
+            "pill-wait"
+          );
 
-          if (intervals[key]) { clearInterval(intervals[key]); intervals[key]=null; }
+          // 기존 타이머 인터벌 정리
+          if (intervals[key]) {
+            clearInterval(intervals[key]);
+            intervals[key] = null;
+          }
 
-          if (status === "진행" && v.endAt){
+          // ✅ 진행 중이면 로컬에서 카운트다운 돌리기
+          if (status === "진행" && v.endAt) {
             const tick = () => {
-              const remain = Math.max(0, Math.floor((v.endAt - Date.now())/1000));
+              const remain = Math.max(0, Math.floor((v.endAt - Date.now()) / 1000));
               tt.textContent = fmt(remain);
-              if (remain <= 0){
-                clearInterval(intervals[key]); intervals[key]=null;
-                st.textContent = "완료"; st.className = "pill pill-done";
-                tt.textContent = "";
-                // 완료음: 간호사 역할에서만 재생
-                playCompleteSound();
-                update(ref(db, `${roomPath()}/timers/${key}`), { status: "완료", endAt: null, remaining: 0, ack:false });
-                setCellBlink(key,true);   // 완료 시 붉은색 깜빡임
+
+              if (remain <= 0) {
+                clearInterval(intervals[key]);
+                intervals[key] = null;
+
+                // 타이머 종료 → DB에 완료 상태만 기록
+                update(ref(db, `${roomPath()}/timers/${key}`), {
+                  status: "완료",
+                  endAt: null,
+                  remaining: 0,
+                  ack: false
+                });
               }
             };
             tick();
             intervals[key] = setInterval(tick, 250);
           } else {
+            // 진행 중이 아닐 때 남은 시간 표시
             const base = DEFAULT_MINUTES;
-            const remain = (typeof v.remaining === "number" && v.remaining>0) ? v.remaining : (status==="완료"?0:base*60);
-            tt.textContent = (status==="완료") ? "" : (remain>0 ? fmt(remain) : "");
-            if (status === "완료" && !ack){
-              setCellBlink(key,true);    // 완료 + 미확인 상태면 계속 깜빡
-            } else {
-              setCellBlink(key,false);   // 나머지는 흰색 유지
-            }
+            const remain = (typeof v.remaining === "number" && v.remaining > 0)
+              ? v.remaining
+              : (status === "완료" ? 0 : base * 60);
+
+            tt.textContent = (status === "완료")
+              ? ""
+              : (remain > 0 ? fmt(remain) : "");
+          }
+
+          // ✅ 깜빡임 처리 (완료 + 미확인인 경우에만)
+          if (status === "완료" && !ack) {
+            setCellBlink(key, true);
+          } else {
+            setCellBlink(key, false);
           }
         });
+
+        // ✅ 첫 스냅샷 이후부터만 완료음 트리거
+        window._timersInitialLoaded = true;
       });
 
       onValue(chunaRef, (snap) => {
@@ -791,7 +853,10 @@
         }
       });
     }
-    function teardownFloorListeners(){ floorRefs.forEach(r => off(r)); floorRefs = []; }
+    function teardownFloorListeners(){
+      floorRefs.forEach(r => off(r));
+      floorRefs = [];
+    }
 
     /* ===== 간호사 호출 수신 리스너 (두 층 모두) ===== */
     let nurseRefs = [];
