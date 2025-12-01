@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>치료실 타이머 보드 v3.12 (담당 미선택 시 시간·버튼 숨김)</title>
+  <title>치료실 타이머 보드 v3.13 (안정화 버전)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root{
@@ -346,10 +346,10 @@
   <!-- (구) 기본 비프음: 예비용으로만 남김 -->
   <audio id="beep" preload="auto" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"></audio>
 
-  <!-- 새 완료음: 2번 울림 (현재는 JS에서 2회 반복 재생) -->
+  <!-- 새 완료음 -->
   <audio id="soundComplete" preload="auto" src="완료음.mp3"></audio>
 
-  <!-- 새 호출음: 1번 울림 -->
+  <!-- 새 호출음 -->
   <audio id="soundCall" preload="auto" src="호출음.mp3"></audio>
 
   <script type="module">
@@ -373,6 +373,12 @@
     const FLOORS = ["1F","2F"];
 
     let currentFloor = new URLSearchParams(location.search).get('floor') || localStorage.getItem('currentFloor') || '1F';
+    // ✅ 예전 버전에서 'default' 등 이상한 값이 남아있는 브라우저 보호
+    if (!FLOORS.includes(currentFloor)) {
+      currentFloor = '1F';
+      localStorage.setItem('currentFloor', '1F');
+    }
+
     const ROLE_KEY = 'ttb_role';
     const roleParam = new URLSearchParams(location.search).get('role');
     if (roleParam === 'doctor' || roleParam === 'nurse') localStorage.setItem(ROLE_KEY, roleParam);
@@ -404,7 +410,7 @@
       "2F": Object.fromEntries(DEPTS.map(d=>[d,false]))
     };
 
-    /* ✅ 완료 셀 깜빡임 상태 관리: 완료 시 붉은색 계열로 통일 */
+    /* ✅ 완료 셀 깜빡임 상태 관리 */
     function setCellBlink(key, on){
       const box = document.getElementById("box-"+key);
       if (!box) return;
@@ -422,7 +428,7 @@
     let listenChannels  = JSON.parse(localStorage.getItem('listenChannels')  || '{}');
     listenChannels = Object.assign(Object.fromEntries(DEPTS.map(d=>[d,true])), listenChannels);
 
-    /* ✅ 새 호출음 재생 함수 (1번만 재생, 역할과 상관없이 호출음은 모두 들음) */
+    /* ✅ 새 호출음 재생 함수 */
     function playCallSound(){
       try{
         const base = document.getElementById('soundCall');
@@ -437,9 +443,8 @@
       }catch(e){}
     }
 
-    /* ✅ 새 완료음 재생 함수 (간호사만 들음) */
+    /* ✅ 새 완료음 재생 함수 (간호사만) */
     function playCompleteSound(){
-      // 🔒 의사 화면에서는 완료음 재생 안 함 (간호사만)
       if (role !== 'nurse') return;
       try{
         const snd = document.getElementById('soundComplete');
@@ -548,7 +553,7 @@
 
     function roomPath(){ return `rooms/${currentFloor}`; }
 
-    // 양방 선택 시: 침치료 셀 폭은 유지하고 안쪽 박스만 숨김
+    // 양방 선택 시: 침치료 셀 안쪽 박스만 숨김
     function updateYangbangCell(rowIndex, dept){
       const tr = document.getElementById("row-"+rowIndex);
       if (!tr) return;
@@ -612,7 +617,7 @@
       }, { onlyOnce: true });
     };
 
-    /* ===== 박스 클릭: 완료 시 1번 터치=깜빡이기만 해제, 2번 터치=기본시간 리셋 ===== */
+    /* ===== 박스 클릭: 완료 → 확인 → 리셋 ===== */
     window.onBoxClick = (key) => {
       const tRef = ref(db, `${roomPath()}/timers/${key}`);
       onValue(tRef, (snap) => {
@@ -623,11 +628,11 @@
         if (status === "완료") {
           if (!ack) {
             update(tRef, { ack: true });
-            setCellBlink(key,false);   // 첫 클릭: 깜빡임 해제 + 흰색 복귀
+            setCellBlink(key,false);
           } else {
             const baseSec = DEFAULT_MINUTES * 60;
             update(tRef, { status: "대기", endAt: null, remaining: baseSec, ack: false });
-            setCellBlink(key,false);   // 두 번째 클릭도 흰색 유지
+            setCellBlink(key,false);
           }
         }
       }, { onlyOnce: true });
@@ -703,7 +708,6 @@
         const cur = !!(snap.val() && snap.val().on);
         const next = !cur;
         set(cRef, { on: next, at: serverTimestamp() });
-        // 🔊 실제 호출음 재생은 각 화면의 nurseCalls 리스너에서 처리
       }, { onlyOnce:true });
     };
 
@@ -715,7 +719,7 @@
       const chunaRef  = ref(db, `${roomPath()}/chuna`);
       floorRefs = [rowsRef, timersRef, chunaRef];
 
-      // ✅ 층 바뀔 때마다 상태/타이머 초기화
+      // 층 바뀔 때마다 상태/타이머 초기화
       window._timersInitialLoaded = false;
       Object.keys(lastStatusMap).forEach(k => delete lastStatusMap[k]);
       Object.keys(intervals).forEach(k => {
@@ -723,8 +727,15 @@
         intervals[k] = null;
       });
 
+      // ✅ rows 스냅샷 검증 추가
       onValue(rowsRef, (snap) => {
-        const rows = snap.val() || {};
+        const data = snap.val();
+        if (data === null || typeof data !== "object") {
+          console.warn("rows snapshot invalid, skip UI update", data);
+          return;
+        }
+        const rows = data;
+
         for (let i=1;i<=ROW_COUNT;i++){
           const r  = rows[i] || {};
           const tr = document.getElementById("row-"+i);
@@ -733,10 +744,9 @@
           if (sel && sel.value !== (r.dept||"")) sel.value = r.dept||"";
           tr.style.background = deptColors[r.dept||""] || "";
 
-          /* ✅ 담당 미선택 시 시간·버튼 숨김 */
           tr.classList.toggle("no-doctor", !(r.dept && r.dept.length));
 
-          // 양방이면 침치료 박스 숨김(폭 유지)
+          // 양방이면 침치료 박스 숨김
           updateYangbangCell(i, r.dept || "");
 
           const nameTd = tr.children[1];
@@ -749,9 +759,14 @@
         }
       });
 
-      // ✅ 타이머 상태/완료 처리
+      // ✅ timers 스냅샷 검증 추가
       onValue(timersRef, (snap) => {
-        const timers = snap.val() || {};
+        const data = snap.val();
+        if (data === null || typeof data !== "object") {
+          console.warn("timers snapshot invalid, skip UI update", data);
+          return;
+        }
+        const timers = data;
 
         if (typeof window._timersInitialLoaded === "undefined") {
           window._timersInitialLoaded = false;
@@ -766,11 +781,9 @@
           const status = v.status || "대기";
           const ack    = !!v.ack;
 
-          // ✅ 이전 status → 완료로 "변한 순간" 감지
           const prevStatus = lastStatusMap[key] ?? null;
           lastStatusMap[key] = status;
 
-          // ✅ 완료로 바뀌는 순간 + 간호사 모드 + 아직 확인 전(ack=false) → 완료음 재생
           if (window._timersInitialLoaded &&
               status === "완료" &&
               prevStatus !== "완료" &&
@@ -779,7 +792,6 @@
             playCompleteSound();
           }
 
-          // UI 기본 설정
           st.textContent = status;
           st.className = "pill " + (
             status === "진행" ? "pill-run" :
@@ -787,13 +799,11 @@
             "pill-wait"
           );
 
-          // 기존 타이머 인터벌 정리
           if (intervals[key]) {
             clearInterval(intervals[key]);
             intervals[key] = null;
           }
 
-          // ✅ 진행 중이면 로컬에서 카운트다운 돌리기
           if (status === "진행" && v.endAt) {
             const tick = () => {
               const remain = Math.max(0, Math.floor((v.endAt - Date.now()) / 1000));
@@ -803,7 +813,6 @@
                 clearInterval(intervals[key]);
                 intervals[key] = null;
 
-                // 타이머 종료 → DB에 완료 상태만 기록
                 update(ref(db, `${roomPath()}/timers/${key}`), {
                   status: "완료",
                   endAt: null,
@@ -815,7 +824,6 @@
             tick();
             intervals[key] = setInterval(tick, 250);
           } else {
-            // 진행 중이 아닐 때 남은 시간 표시
             const base = DEFAULT_MINUTES;
             const remain = (typeof v.remaining === "number" && v.remaining > 0)
               ? v.remaining
@@ -826,7 +834,6 @@
               : (remain > 0 ? fmt(remain) : "");
           }
 
-          // ✅ 깜빡임 처리 (완료 + 미확인인 경우에만)
           if (status === "완료" && !ack) {
             setCellBlink(key, true);
           } else {
@@ -834,7 +841,6 @@
           }
         });
 
-        // ✅ 첫 스냅샷 이후부터만 완료음 트리거
         window._timersInitialLoaded = true;
       });
 
@@ -873,7 +879,6 @@
           btn.classList.toggle("on", on);
           btn.classList.toggle("blink-btn", on);
           if (on && !wasOn && listenChannels[dept]) {
-            // 🔔 새로운 호출이 들어올 때만 1번 재생
             playCallSound();
           }
           lastCallState2[floor][dept] = on;
@@ -892,10 +897,8 @@
       const tbody = document.getElementById("tableBody"); tbody.innerHTML = "";
       for(let i=1;i<=ROW_COUNT;i++){
         const tr = document.createElement("tr"); tr.id = "row-"+i;
-        /* 초기에는 담당 미선택 상태로 가정 → 시간/버튼 숨김 클래스 부여 */
         tr.classList.add("no-doctor");
 
-        /* 담당(주치의 선택) */
         const docTd = document.createElement("td");
         docTd.innerHTML = `
           <div>
@@ -907,7 +910,6 @@
           </div>`;
         tr.appendChild(docTd);
 
-        /* 이름 */
         const nameTd = document.createElement("td");
         nameTd.className = "name-cell";
         nameTd.textContent = `<${i}번 베드> /`;
@@ -917,7 +919,6 @@
         });
         tr.appendChild(nameTd);
 
-        /* 치료 3칸 */
         COLS.forEach((colName, j) => {
           const key = `r${i}_c${j}`;
           const td  = document.createElement("td");
@@ -941,7 +942,6 @@
           tr.appendChild(td);
         });
 
-        /* 추나 */
         const chunaKey = `r${i}_c3`;
         const chunaTd  = document.createElement("td");
         chunaTd.className = "chuna-cell";
