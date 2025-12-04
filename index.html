@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>치료실 타이머 보드 v3.13 (안정화 버전)</title>
+  <title>치료실 타이머 보드 v3.14 (서버시간 안정 버전)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root{
@@ -54,7 +54,6 @@
     .day-chip.on{ outline:3px solid #ff9800; background:#fff3e0; }
 
     table{ width:100%; border-collapse:collapse; background:#fff; box-shadow:0 2px 8px rgba(0,0,0,0.03); }
-    /* ◆ 헤더 배경색 남색 + 글씨 크게 */
     thead{ background:#002f6c; color:#fff; }
     th,td{ border:1px solid #ececec; padding:12px 10px; text-align:center; font-size:18px; }
     thead th{
@@ -62,20 +61,17 @@
       font-weight:900;
     }
 
-    /* ▶ 폭 재조정: 이름 칸 확대, 치료 칸 축소 */
     th:nth-child(1){ width:170px; }
-    th:nth-child(2){ width:420px; text-align:center; }  /* 이름 칸 넓힘 */
+    th:nth-child(2){ width:420px; text-align:center; }
     td:nth-child(2){ text-align:left; }
-    th:nth-child(3), th:nth-child(4), th:nth-child(5){ width:210px; } /* 치료 칸 줄임 */
-    th:nth-child(6){ width:240px; } /* 추나 칸 여유 */
+    th:nth-child(3), th:nth-child(4), th:nth-child(5){ width:210px; }
+    th:nth-child(6){ width:240px; }
 
-    /* 이름 글자 크게 (2배 정도) */
     .name-cell{
       font-size:48px;
       font-weight:800; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
     }
 
-    /* ===== 큰 셀 레이아웃(공통) ===== */
     .status-box{
       display:grid; grid-template-columns: 1fr auto; align-items:center; gap:16px;
       min-height:140px; padding:14px 14px; border-radius:16px; background:#ffffff;
@@ -96,7 +92,6 @@
     .pill-run{ background:var(--yellow); color:#222; }
     .pill-done{ background:#ffb6b6; color:#681212; }
 
-    /* ✅ 진행/중지 버튼 크게 (추나 수준) */
     .mini-btn{
       border:none; border-radius:20px;
       padding:22px 28px;
@@ -112,7 +107,6 @@
     .adjust-box{ display:flex; flex-direction:column; gap:10px; justify-content:stretch; align-items:stretch; }
     .btn-adjust{ background:#fff; border:3px solid #bdbdbd; border-radius:16px; width:100%; height:56px; font-size:26px; cursor:pointer; font-weight:900; }
 
-    /* ✅ 완료 시 붉은색 계열로 깜빡임 */
     @keyframes cellBlink{
       0%{
         transform:scale(1);
@@ -134,7 +128,6 @@
       animation:cellBlink 1s ease-in-out infinite;
     }
 
-    /* ===== 호출 UI: 제목 아래 한 줄 (확대 + 스티키) ===== */
     .call-sticky{
       position: sticky;
       top: 0;
@@ -148,7 +141,7 @@
       width:100%;
       display:flex;
       flex-wrap:wrap;
-      gap:40px 40px;            /* 그룹 간 간격 */
+      gap:40px 40px;
       align-items:center;
       justify-content:center;
     }
@@ -171,7 +164,6 @@
     .btn-call.on{ outline:3px solid #ff4d4f; background:#ffe6e6; }
     .btn-call[disabled]{ opacity:.45; cursor:not-allowed; }
 
-    /* 로고 가운데 */
     .logo-wrap{
       display:flex;
       align-items:center;
@@ -183,7 +175,6 @@
       object-fit:contain;
     }
 
-    /* ▶ 호출 버튼 깜빡임 액션 크게 */
     @keyframes blinkBtn{
       0%{
         background:#ffe6e6;
@@ -215,21 +206,18 @@
       .logo-img{ height:48px; }
     }
 
-    /* ✅ 호출 UI 층별 색상 */
     .call-1F .btn-call{ background:#ffe5e5; color:#b30000; border:3px solid #ff4d4d; }
     .call-2F .btn-call{ background:#e5f0ff; color:#0048b3; border:3px solid #4d8cff; }
     .btn-call.on{ background:#ffcccc; border-color:#ff0000; }
     .call-2F .btn-call.on{ background:#cce0ff; border-color:#0058ff; }
     .call-sticky { padding:14px 0; }
 
-    /* ===== 치료 칸(핫팩/물리/침) 축소 전용 (이름칸 확보) ===== */
     .therapy-cell .status-box{ min-height:140px; padding:12px; }
     .therapy-cell .time-text{
       font-size:clamp(36px, 4.2vw, 50px);
       min-width:90px;
     }
 
-    /* ===== 추나(O/X) 크게 + 초기화 버튼 ===== */
     .chuna-box{
       display:flex; align-items:center; justify-content:space-between;
       min-height:140px; padding:16px; border-radius:16px; background:#fff;
@@ -250,11 +238,9 @@
     }
     .reset-btn:active{ transform:translateY(1px); }
 
-    /* ✅ 담당(주치의) 미선택 행: 시간표시 + 버튼 열 숨김 */
     tr.no-doctor .time-text{ display:none; }
     tr.no-doctor .right-col{ display:none; }
 
-    /* ✅ 주말 모드: 물리치료(4번째 열) 숨김 */
     body.weekend-mode #timerTable th:nth-child(4),
     body.weekend-mode #timerTable td:nth-child(4){
       display:none;
@@ -262,13 +248,10 @@
   </style>
 </head>
 <body>
-  <!-- 제목 -->
   <h2>🏥 치료실 타이머판</h2>
 
-  <!-- 제목 아래: 스크롤 고정 호출 UI -->
   <div class="call-sticky">
     <div class="call-inline">
-      <!-- ✅ 1층 그룹 -->
       <div class="call-group call-1F">
         <span class="call-label">1층:</span>
         <button class="btn-call" id="call-1F-1과" title="1층-1과" onclick="toggleCall('1F','1과')">1</button>
@@ -278,12 +261,10 @@
         <button class="btn-call" id="call-1F-양방" title="1층-양방" onclick="toggleCall('1F','양방')">양</button>
       </div>
 
-      <!-- 가운데 병원 로고 -->
       <div class="logo-wrap">
         <img src="logo_seongmo.png" alt="성모사랑한방병원 로고" class="logo-img">
       </div>
 
-      <!-- ✅ 2층 그룹 -->
       <div class="call-group call-2F">
         <span class="call-label">2층:</span>
         <button class="btn-call" id="call-2F-1과" title="2층-1과" onclick="toggleCall('2F','1과')">1</button>
@@ -295,11 +276,9 @@
     </div>
   </div>
 
-  <!-- 상단 컨트롤(요일/층/역할/채널/설정) -->
   <div class="topbar">
     <div class="grow"></div>
 
-    <!-- 요일 선택: 평일 / 주말 -->
     <div style="display:flex;gap:8px;align-items:center;">
       <span style="font-weight:900;">요일:</span>
       <button class="day-chip" id="day-weekday" onclick="setDayType('weekday')">평일</button>
@@ -343,13 +322,8 @@
     <tbody id="tableBody"></tbody>
   </table>
 
-  <!-- (구) 기본 비프음: 예비용으로만 남김 -->
   <audio id="beep" preload="auto" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"></audio>
-
-  <!-- 새 완료음 -->
   <audio id="soundComplete" preload="auto" src="완료음.mp3"></audio>
-
-  <!-- 새 호출음 -->
   <audio id="soundCall" preload="auto" src="호출음.mp3"></audio>
 
   <script type="module">
@@ -369,11 +343,20 @@
     const app = initializeApp(firebaseConfig);
     const db  = getDatabase(app);
 
+    /* ⭐ 서버 시간 오프셋 (모든 PC 공통 기준) */
+    let serverOffset = 0;
+    onValue(ref(db, ".info/serverTimeOffset"), snap => {
+      const v = snap.val();
+      serverOffset = typeof v === "number" ? v : 0;
+    });
+    function nowServerMs(){
+      return Date.now() + serverOffset;
+    }
+
     const DEPTS  = ["1과","2과","3과","4과","양방"];
     const FLOORS = ["1F","2F"];
 
     let currentFloor = new URLSearchParams(location.search).get('floor') || localStorage.getItem('currentFloor') || '1F';
-    // ✅ 예전 버전에서 'default' 등 이상한 값이 남아있는 브라우저 보호
     if (!FLOORS.includes(currentFloor)) {
       currentFloor = '1F';
       localStorage.setItem('currentFloor', '1F');
@@ -382,13 +365,11 @@
     const ROLE_KEY = 'ttb_role';
     const roleParam = new URLSearchParams(location.search).get('role');
     if (roleParam === 'doctor' || roleParam === 'nurse') localStorage.setItem(ROLE_KEY, roleParam);
-    let role = (localStorage.getItem(ROLE_KEY) || 'doctor'); // doctor | nurse
+    let role = (localStorage.getItem(ROLE_KEY) || 'doctor');
 
-    /* 평일/주말 모드 */
     const DAY_KEY = 'ttb_dayType';
     let dayType = localStorage.getItem(DAY_KEY) || 'weekday';
 
-    /* 기본 시간: UI 제거 → 저장된 값이 있으면 사용, 기본은 10분 */
     let DEFAULT_MINUTES = parseInt(localStorage.getItem('defaultMinutes') || '10', 10);
     const ROW_COUNT = 12;
     const COLS = ["핫팩","물리치료","침치료"];
@@ -403,14 +384,13 @@
     };
 
     const intervals = {};
-    const lastStatusMap = {};   // ✅ 각 타이머의 이전 status 관리
+    const lastStatusMap = {};
 
     const lastCallState2 = {
       "1F": Object.fromEntries(DEPTS.map(d=>[d,false])),
       "2F": Object.fromEntries(DEPTS.map(d=>[d,false]))
     };
 
-    /* ✅ 완료 셀 깜빡임 상태 관리 */
     function setCellBlink(key, on){
       const box = document.getElementById("box-"+key);
       if (!box) return;
@@ -423,12 +403,10 @@
       }
     }
 
-    /* 수신 채널 설정 */
     const beep = document.getElementById('beep');
     let listenChannels  = JSON.parse(localStorage.getItem('listenChannels')  || '{}');
     listenChannels = Object.assign(Object.fromEntries(DEPTS.map(d=>[d,true])), listenChannels);
 
-    /* ✅ 새 호출음 재생 함수 */
     function playCallSound(){
       try{
         const base = document.getElementById('soundCall');
@@ -443,7 +421,6 @@
       }catch(e){}
     }
 
-    /* ✅ 새 완료음 재생 함수 (간호사만) */
     function playCompleteSound(){
       if (role !== 'nurse') return;
       try{
@@ -496,7 +473,6 @@
       );
     }
 
-    /* 평일/주말 UI 및 모드 적용 */
     function applyDayUI(){
       const weekdayBtn = document.getElementById('day-weekday');
       const weekendBtn = document.getElementById('day-weekend');
@@ -532,7 +508,6 @@
       reattachNurseListeners();
     };
 
-    /* 평일/주말 모드 변경 */
     window.setDayType = (mode) => {
       if (mode !== 'weekday' && mode !== 'weekend') return;
       dayType = mode;
@@ -553,7 +528,6 @@
 
     function roomPath(){ return `rooms/${currentFloor}`; }
 
-    // 양방 선택 시: 침치료 셀 안쪽 박스만 숨김
     function updateYangbangCell(rowIndex, dept){
       const tr = document.getElementById("row-"+rowIndex);
       if (!tr) return;
@@ -572,9 +546,8 @@
       if (tr) tr.style.background = deptColors[dept] || "";
       updateYangbangCell(rowIndex, dept);
 
-      // 양방 선택 시 침치료 타이머도 초기화
       if (dept === "양방"){
-        const key = `r${rowIndex}_c2`; // 침치료
+        const key = `r${rowIndex}_c2`;
         update(ref(db, `${roomPath()}/timers/${key}`), {
           status:"대기", endAt:null, remaining:0, ack:false
         });
@@ -582,17 +555,17 @@
       }
     };
 
-    /* ===== 타이머 조작 ===== */
+    /* ===== 타이머 조작 (서버시간 기준) ===== */
     window.startTimer = (key, colName) => {
       const baseMin = DEFAULT_MINUTES;
       const tRef = ref(db, `${roomPath()}/timers/${key}`);
       update(tRef, { colName, status: "진행" });
       onValue(tRef, (snap) => {
         const v = snap.val() || {};
-        const now = Date.now();
         const remainMs = (typeof v.remaining === "number" && v.remaining > 0)
           ? v.remaining * 1000
           : baseMin * 60 * 1000;
+        const now = nowServerMs();   // ⭐ 서버 기준
         update(tRef, { endAt: now + remainMs, status: "진행", ack:false });
       }, { onlyOnce: true });
     };
@@ -617,7 +590,6 @@
       }, { onlyOnce: true });
     };
 
-    /* ===== 박스 클릭: 완료 → 확인 → 리셋 ===== */
     window.onBoxClick = (key) => {
       const tRef = ref(db, `${roomPath()}/timers/${key}`);
       onValue(tRef, (snap) => {
@@ -638,22 +610,18 @@
       }, { onlyOnce: true });
     };
 
-    /* ===== 추나 O/X ===== */
     window.toggleChuna = (key, onFlag) => {
       set(ref(db, `${roomPath()}/chuna/${key}`), { on:onFlag, at: serverTimestamp() });
     };
 
-    /* ===== 행 초기화 ===== */
     window.resetRow = (rowIndex) => {
       const basePath = roomPath();
 
-      // 행 기본 정보 초기화
       update(ref(db, `${basePath}/rows/${rowIndex}`), {
         dept:"",
         name:""
       });
 
-      // 3개 치료 타이머 초기화
       COLS.forEach((colName, j) => {
         const key = `r${rowIndex}_c${j}`;
         update(ref(db, `${basePath}/timers/${key}`), {
@@ -665,14 +633,12 @@
         setCellBlink(key,false);
       });
 
-      // 추나 초기화
       const chunaKey = `r${rowIndex}_c3`;
       set(ref(db, `${basePath}/chuna/${chunaKey}`), {
         on:false,
         at: serverTimestamp()
       });
 
-      // UI 즉시 반영
       const tr = document.getElementById("row-"+rowIndex);
       if (tr){
         const sel = tr.querySelector("select.doctor");
@@ -687,7 +653,6 @@
       }
     };
 
-    /* (구) 비프 5초 재생 함수 - 현재는 사용 안 함 */
     function playBeepOnce(){ try{ beep.currentTime = 0; beep.play(); }catch(e){} }
     function playBeepFor5Sec(enabled){
       if (!enabled) return;
@@ -700,9 +665,8 @@
       }, 1000);
     }
 
-    /* ===== 호출 토글 ===== */
     window.toggleCall = (floor, dept) => {
-      if (role==='nurse' && floor !== currentFloor) return; // 간호사는 자기 층만
+      if (role==='nurse' && floor !== currentFloor) return;
       const cRef = ref(db, `rooms/${floor}/nurseCalls/${dept}`);
       onValue(cRef, (snap)=>{
         const cur = !!(snap.val() && snap.val().on);
@@ -711,7 +675,6 @@
       }, { onlyOnce:true });
     };
 
-    /* ===== 층 데이터 리스너 ===== */
     let floorRefs = [];
     function attachFloorListeners(){
       const rowsRef   = ref(db, `${roomPath()}/rows`);
@@ -719,7 +682,6 @@
       const chunaRef  = ref(db, `${roomPath()}/chuna`);
       floorRefs = [rowsRef, timersRef, chunaRef];
 
-      // 층 바뀔 때마다 상태/타이머 초기화
       window._timersInitialLoaded = false;
       Object.keys(lastStatusMap).forEach(k => delete lastStatusMap[k]);
       Object.keys(intervals).forEach(k => {
@@ -727,13 +689,9 @@
         intervals[k] = null;
       });
 
-      // ✅ rows 스냅샷 검증 추가
       onValue(rowsRef, (snap) => {
         const data = snap.val();
-        if (data === null || typeof data !== "object") {
-          console.warn("rows snapshot invalid, skip UI update", data);
-          return;
-        }
+        if (data === null || typeof data !== "object") return;
         const rows = data;
 
         for (let i=1;i<=ROW_COUNT;i++){
@@ -746,7 +704,6 @@
 
           tr.classList.toggle("no-doctor", !(r.dept && r.dept.length));
 
-          // 양방이면 침치료 박스 숨김
           updateYangbangCell(i, r.dept || "");
 
           const nameTd = tr.children[1];
@@ -759,13 +716,9 @@
         }
       });
 
-      // ✅ timers 스냅샷 검증 추가
       onValue(timersRef, (snap) => {
         const data = snap.val();
-        if (data === null || typeof data !== "object") {
-          console.warn("timers snapshot invalid, skip UI update", data);
-          return;
-        }
+        if (data === null || typeof data !== "object") return;
         const timers = data;
 
         if (typeof window._timersInitialLoaded === "undefined") {
@@ -806,7 +759,7 @@
 
           if (status === "진행" && v.endAt) {
             const tick = () => {
-              const remain = Math.max(0, Math.floor((v.endAt - Date.now()) / 1000));
+              const remain = Math.max(0, Math.floor((v.endAt - nowServerMs()) / 1000)); // ⭐ 서버시간 계산
               tt.textContent = fmt(remain);
 
               if (remain <= 0) {
@@ -864,7 +817,6 @@
       floorRefs = [];
     }
 
-    /* ===== 간호사 호출 수신 리스너 (두 층 모두) ===== */
     let nurseRefs = [];
     function attachNurseListeners(){
       nurseRefs = FLOORS.map(f => ref(db, `rooms/${f}/nurseCalls`));
