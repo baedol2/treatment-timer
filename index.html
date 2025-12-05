@@ -241,6 +241,7 @@
     tr.no-doctor .time-text{ display:none; }
     tr.no-doctor .right-col{ display:none; }
 
+    /* 주말 모드: 물리치료(4번째 열) 숨김 */
     body.weekend-mode #timerTable th:nth-child(4),
     body.weekend-mode #timerTable td:nth-child(4){
       display:none;
@@ -250,6 +251,7 @@
 <body>
   <h2>🏥 치료실 타이머판</h2>
 
+  <!-- 호출 영역 -->
   <div class="call-sticky">
     <div class="call-inline">
       <div class="call-group call-1F">
@@ -276,6 +278,7 @@
     </div>
   </div>
 
+  <!-- 상단 컨트롤 -->
   <div class="topbar">
     <div class="grow"></div>
 
@@ -308,6 +311,7 @@
     <button class="danger-btn" onclick="resetSettings()">⚙️ 설정 초기화</button>
   </div>
 
+  <!-- 메인 테이블 -->
   <table id="timerTable">
     <thead>
       <tr>
@@ -322,6 +326,7 @@
     <tbody id="tableBody"></tbody>
   </table>
 
+  <!-- 오디오 -->
   <audio id="beep" preload="auto" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"></audio>
   <audio id="soundComplete" preload="auto" src="완료음.mp3"></audio>
   <audio id="soundCall" preload="auto" src="호출음.mp3"></audio>
@@ -343,7 +348,7 @@
     const app = initializeApp(firebaseConfig);
     const db  = getDatabase(app);
 
-    /* ⭐ 서버 시간 오프셋 (모든 PC 공통 기준) */
+    /* ⭐ 서버 시간 오프셋 */
     let serverOffset = 0;
     onValue(ref(db, ".info/serverTimeOffset"), snap => {
       const v = snap.val();
@@ -407,7 +412,6 @@
     let listenChannels  = JSON.parse(localStorage.getItem('listenChannels')  || '{}');
     listenChannels = Object.assign(Object.fromEntries(DEPTS.map(d=>[d,true])), listenChannels);
 
-    /* ✅ 호출음: clone 1회 재생 */
     function playCallSound(){
       try{
         const base = document.getElementById('soundCall');
@@ -415,26 +419,30 @@
         const audio = base.cloneNode(true);
         base.parentNode.appendChild(audio);
         audio.currentTime = 0;
-        audio.play().catch(()=>{});
+        audio.play();
         audio.addEventListener('ended', () => {
           try { audio.remove(); } catch(e){}
         }, { once:true });
       }catch(e){}
     }
 
-    /* ✅ 완료음: 간호사 모드 + 완료 전환 시 1회만 재생 (루프 없음) */
     function playCompleteSound(){
       if (role !== 'nurse') return;
       try{
-        const base = document.getElementById('soundComplete');
-        if (!base) return;
-        const audio = base.cloneNode(true);
-        base.parentNode.appendChild(audio);
+        const snd = document.getElementById('soundComplete');
+        if (!snd) return;
+
+        const clone = snd.cloneNode(true);
+        snd.parentNode.replaceChild(clone, snd);
+        const audio = document.getElementById('soundComplete');
+
         audio.currentTime = 0;
-        audio.play().catch(()=>{});
+        audio.play();
         audio.addEventListener('ended', () => {
-          try { audio.remove(); } catch(e){}
-        }, { once:true });
+          audio.currentTime = 0;
+          audio.play();
+        }, { once: true });
+
       }catch(e){}
     }
 
@@ -525,6 +533,7 @@
 
     function roomPath(){ return `rooms/${currentFloor}`; }
 
+    // 양방 선택 시 침치료 상자 숨김
     function updateYangbangCell(rowIndex, dept){
       const tr = document.getElementById("row-"+rowIndex);
       if (!tr) return;
@@ -543,6 +552,7 @@
       if (tr) tr.style.background = deptColors[dept] || "";
       updateYangbangCell(rowIndex, dept);
 
+      // 양방이면 침치료 타이머도 초기화
       if (dept === "양방"){
         const key = `r${rowIndex}_c2`;
         update(ref(db, `${roomPath()}/timers/${key}`), {
@@ -562,7 +572,7 @@
         const remainMs = (typeof v.remaining === "number" && v.remaining > 0)
           ? v.remaining * 1000
           : baseMin * 60 * 1000;
-        const now = nowServerMs();
+        const now = nowServerMs();   // 서버 기준
         update(tRef, { endAt: now + remainMs, status: "진행", ack:false });
       }, { onlyOnce: true });
     };
@@ -587,6 +597,7 @@
       }, { onlyOnce: true });
     };
 
+    // 박스 클릭: 완료 → 확인 → 리셋
     window.onBoxClick = (key) => {
       const tRef = ref(db, `${roomPath()}/timers/${key}`);
       onValue(tRef, (snap) => {
@@ -662,6 +673,7 @@
       }, 1000);
     }
 
+    // 호출 토글
     window.toggleCall = (floor, dept) => {
       if (role==='nurse' && floor !== currentFloor) return;
       const cRef = ref(db, `rooms/${floor}/nurseCalls/${dept}`);
@@ -672,6 +684,7 @@
       }, { onlyOnce:true });
     };
 
+    /* ===== 층 데이터 리스너 ===== */
     let floorRefs = [];
     function attachFloorListeners(){
       const rowsRef   = ref(db, `${roomPath()}/rows`);
@@ -734,7 +747,7 @@
           const prevStatus = lastStatusMap[key] ?? null;
           lastStatusMap[key] = status;
 
-          /* ✅ 여기서만 완료음 조건 체크 */
+          // 진행 -> 완료 전이 시 간호사 화면에서만 완료음
           if (window._timersInitialLoaded &&
               status === "완료" &&
               prevStatus !== "완료" &&
@@ -757,10 +770,13 @@
 
           if (status === "진행" && v.endAt) {
             const tick = () => {
-              const remain = Math.max(0, Math.floor((v.endAt - nowServerMs()) / 1000));
-              tt.textContent = fmt(remain);
+              // ⭐ 서버시간 기준 잔여초
+              const remainRaw = Math.floor((v.endAt - nowServerMs()) / 1000);
+              const remainClamped = Math.max(remainRaw, 0);
+              tt.textContent = fmt(remainClamped);
 
-              if (remain <= 0) {
+              // 아주 여유 있게 -5초 이하일 때만 완료 처리
+              if (remainRaw <= -2) {
                 clearInterval(intervals[key]);
                 intervals[key] = null;
 
@@ -815,6 +831,7 @@
       floorRefs = [];
     }
 
+    /* ===== 간호사 호출 수신 리스너 (두 층) ===== */
     let nurseRefs = [];
     function attachNurseListeners(){
       nurseRefs = FLOORS.map(f => ref(db, `rooms/${f}/nurseCalls`));
