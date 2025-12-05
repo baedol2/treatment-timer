@@ -407,6 +407,7 @@
     let listenChannels  = JSON.parse(localStorage.getItem('listenChannels')  || '{}');
     listenChannels = Object.assign(Object.fromEntries(DEPTS.map(d=>[d,true])), listenChannels);
 
+    /* ✅ 호출음: clone 1회 재생 */
     function playCallSound(){
       try{
         const base = document.getElementById('soundCall');
@@ -414,30 +415,26 @@
         const audio = base.cloneNode(true);
         base.parentNode.appendChild(audio);
         audio.currentTime = 0;
-        audio.play();
+        audio.play().catch(()=>{});
         audio.addEventListener('ended', () => {
           try { audio.remove(); } catch(e){}
         }, { once:true });
       }catch(e){}
     }
 
+    /* ✅ 완료음: 간호사 모드 + 완료 전환 시 1회만 재생 (루프 없음) */
     function playCompleteSound(){
       if (role !== 'nurse') return;
       try{
-        const snd = document.getElementById('soundComplete');
-        if (!snd) return;
-
-        const clone = snd.cloneNode(true);
-        snd.parentNode.replaceChild(clone, snd);
-        const audio = document.getElementById('soundComplete');
-
+        const base = document.getElementById('soundComplete');
+        if (!base) return;
+        const audio = base.cloneNode(true);
+        base.parentNode.appendChild(audio);
         audio.currentTime = 0;
-        audio.play();
+        audio.play().catch(()=>{});
         audio.addEventListener('ended', () => {
-          audio.currentTime = 0;
-          audio.play();
-        }, { once: true });
-
+          try { audio.remove(); } catch(e){}
+        }, { once:true });
       }catch(e){}
     }
 
@@ -565,7 +562,7 @@
         const remainMs = (typeof v.remaining === "number" && v.remaining > 0)
           ? v.remaining * 1000
           : baseMin * 60 * 1000;
-        const now = nowServerMs();   // ⭐ 서버 기준
+        const now = nowServerMs();
         update(tRef, { endAt: now + remainMs, status: "진행", ack:false });
       }, { onlyOnce: true });
     };
@@ -737,6 +734,7 @@
           const prevStatus = lastStatusMap[key] ?? null;
           lastStatusMap[key] = status;
 
+          /* ✅ 여기서만 완료음 조건 체크 */
           if (window._timersInitialLoaded &&
               status === "완료" &&
               prevStatus !== "완료" &&
@@ -759,7 +757,7 @@
 
           if (status === "진행" && v.endAt) {
             const tick = () => {
-              const remain = Math.max(0, Math.floor((v.endAt - nowServerMs()) / 1000)); // ⭐ 서버시간 계산
+              const remain = Math.max(0, Math.floor((v.endAt - nowServerMs()) / 1000));
               tt.textContent = fmt(remain);
 
               if (remain <= 0) {
