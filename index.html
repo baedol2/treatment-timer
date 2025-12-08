@@ -333,7 +333,16 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
-    import { getDatabase, ref, set, update, onValue, off, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js";
+    import {
+      getDatabase,
+      ref,
+      set,
+      update,
+      onValue,
+      off,
+      serverTimestamp,
+      runTransaction
+    } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCDPfyuS-lXHkkmbHEkE2sqFBkBvb_zhVg",
@@ -348,11 +357,17 @@
     const app = initializeApp(firebaseConfig);
     const db  = getDatabase(app);
 
-    /* ⭐ 서버 시간 오프셋 */
+    /* ⭐ 서버 시간 오프셋: 최초 한 번만 고정 */
     let serverOffset = 0;
-    onValue(ref(db, ".info/serverTimeOffset"), snap => {
+    let serverTimeInitialized = false;
+    const offsetRef = ref(db, ".info/serverTimeOffset");
+    onValue(offsetRef, snap => {
       const v = snap.val();
-      serverOffset = typeof v === "number" ? v : 0;
+      if (!serverTimeInitialized && typeof v === "number") {
+        serverOffset = v;
+        serverTimeInitialized = true;
+        off(offsetRef); // 이후 변경은 무시
+      }
     });
     function nowServerMs(){
       return Date.now() + serverOffset;
@@ -768,23 +783,33 @@
             intervals[key] = null;
           }
 
-          if (status === "진행" && v.endAt) {
+          if (status === "진행" && typeof v.endAt === "number") {
+            const tRef = ref(db, `${roomPath()}/timers/${key}`);
+            const endAtSnapshot = v.endAt;
+
             const tick = () => {
-              // ⭐ 서버시간 기준 잔여초
-              const remainRaw = Math.floor((v.endAt - nowServerMs()) / 1000);
+              const remainRaw = Math.floor((endAtSnapshot - nowServerMs()) / 1000);
               const remainClamped = Math.max(remainRaw, 0);
               tt.textContent = fmt(remainClamped);
 
-              // 아주 여유 있게 -5초 이하일 때만 완료 처리
+              // 아주 여유 있게 -2초 이하일 때만 완료 처리
               if (remainRaw <= -2) {
                 clearInterval(intervals[key]);
                 intervals[key] = null;
 
-                update(ref(db, `${roomPath()}/timers/${key}`), {
-                  status: "완료",
-                  endAt: null,
-                  remaining: 0,
-                  ack: false
+                // 🔒 현재 DB 상태가 여전히 '진행'이고 endAt도 동일할 때만 완료로 변경
+                runTransaction(tRef, cur => {
+                  if (!cur) return cur;
+                  if (cur.status !== "진행") return cur;
+                  if (cur.endAt !== endAtSnapshot) return cur;
+
+                  return {
+                    ...cur,
+                    status: "완료",
+                    endAt: null,
+                    remaining: 0,
+                    ack: false
+                  };
                 });
               }
             };
