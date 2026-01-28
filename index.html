@@ -391,7 +391,13 @@
     let dayType = localStorage.getItem(DAY_KEY) || 'weekday';
 
     let DEFAULT_MINUTES = parseInt(localStorage.getItem('defaultMinutes') || '10', 10);
-    const ROW_COUNT = 12;
+
+    // ✅ 층별 베드 수 설정: 1층 14 / 2층 12
+    const ROW_COUNT_BY_FLOOR = { "1F": 14, "2F": 12 };
+    function getRowCount(){
+      return ROW_COUNT_BY_FLOOR[currentFloor] || 12;
+    }
+
     const COLS = ["핫팩","물리치료","침치료"];
 
     const deptColors = {
@@ -535,13 +541,19 @@
       applyDayUI();
     };
 
+    // ✅ 층 전환 시: 리스너 제거 → 테이블(베드 수) 재생성 → 리스너 재부착
     window.switchFloor = (f) => {
       if (!FLOORS.includes(f)) return;
       currentFloor = f;
       localStorage.setItem('currentFloor', f);
+
       applyFloorTabs();
+
       teardownFloorListeners();
-      attachFloorListeners();
+
+      buildTable();            // ★ 층별 베드 수 반영 (1F=14 / 2F=12)
+      attachFloorListeners();  // ★ 새 DOM에 맞춰 리스너 다시 부착
+
       reattachNurseListeners();
       applyRoleUI();
     };
@@ -719,7 +731,7 @@
         if (data === null || typeof data !== "object") return;
         const rows = data;
 
-        for (let i=1;i<=ROW_COUNT;i++){
+        for (let i=1;i<=getRowCount();i++){
           const r  = rows[i] || {};
           const tr = document.getElementById("row-"+i);
           if (!tr) continue;
@@ -838,7 +850,7 @@
 
       onValue(chunaRef, (snap) => {
         const data = snap.val() || {};
-        for (let i=1;i<=ROW_COUNT;i++){
+        for (let i=1;i<=getRowCount();i++){
           const key = `r${i}_c3`;
           const on = !!(data[key] && data[key].on);
           const st = document.getElementById("status-"+key);
@@ -886,8 +898,11 @@
     }
 
     function buildTable(){
-      const tbody = document.getElementById("tableBody"); tbody.innerHTML = "";
-      for(let i=1;i<=ROW_COUNT;i++){
+      const tbody = document.getElementById("tableBody");
+      tbody.innerHTML = "";
+
+      const rowCount = getRowCount(); // ✅ 현재 층의 베드 수
+      for(let i=1;i<=rowCount;i++){
         const tr = document.createElement("tr"); tr.id = "row-"+i;
         tr.classList.add("no-doctor");
 
@@ -954,6 +969,7 @@
       }
     }
 
+    // 초기 진입
     buildTable();
     attachFloorListeners();
     attachNurseListeners();
