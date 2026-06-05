@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>치료실 타이머 보드 v3.14 (서버시간 안정 버전)</title>
+  <title>치료실 타이머 보드 v3.15 </title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root{
@@ -400,6 +400,21 @@
 
     const COLS = ["핫팩","물리치료","침치료"];
 
+    // ✅ 타이머별 기본 시간 설정
+    // - 핫팩: 기존 DEFAULT_MINUTES 사용
+    // - 물리치료: 8분 고정
+    // - 침치료: 기존 DEFAULT_MINUTES 사용
+    function getTimerMinutes(colName){
+      return (colName === "물리치료") ? 8 : DEFAULT_MINUTES;
+    }
+
+    // key(r1_c0, r1_c1, r1_c2)만 있을 때 어떤 치료인지 역추적
+    function getColNameByKey(key){
+      const m = String(key).match(/_c(\d+)$/);
+      if (!m) return "";
+      return COLS[Number(m[1])] || "";
+    }
+
     const deptColors = {
       "": "",
       "양방":"var(--dept-west)",
@@ -591,7 +606,7 @@
 
     /* ===== 타이머 조작 (서버시간 기준) ===== */
     window.startTimer = (key, colName) => {
-      const baseMin = DEFAULT_MINUTES;
+      const baseMin = getTimerMinutes(colName);
       const tRef = ref(db, `${roomPath()}/timers/${key}`);
       update(tRef, { colName, status: "진행" });
       onValue(tRef, (snap) => {
@@ -608,18 +623,19 @@
       update(tRef, { status: "대기", endAt: null, remaining: 0, ack:false });
       setCellBlink(key,false);
     };
-    window.adjustTime = (key, diffSec) => {
+    window.adjustTime = (key, diffSec, colName) => {
       const tRef = ref(db, `${roomPath()}/timers/${key}`);
       onValue(tRef, (snap) => {
         const v = snap.val() || {};
         const diffMs = diffSec * 1000;
+        const timerColName = colName || v.colName || getColNameByKey(key);
         if (v.status === "진행" && v.endAt) {
-          update(tRef, { endAt: v.endAt + diffMs });
+          update(tRef, { endAt: v.endAt + diffMs, colName: timerColName });
         } else {
-          const base = DEFAULT_MINUTES;
+          const base = getTimerMinutes(timerColName);
           const curSec = (typeof v.remaining === "number" && v.remaining > 0) ? v.remaining : base * 60;
           const nxtSec = Math.max(30, curSec + diffSec);
-          update(tRef, { remaining: nxtSec });
+          update(tRef, { remaining: nxtSec, colName: timerColName });
         }
       }, { onlyOnce: true });
     };
@@ -637,8 +653,9 @@
             update(tRef, { ack: true });
             setCellBlink(key,false);
           } else {
-            const baseSec = DEFAULT_MINUTES * 60;
-            update(tRef, { status: "대기", endAt: null, remaining: baseSec, ack: false });
+            const timerColName = v.colName || getColNameByKey(key);
+            const baseSec = getTimerMinutes(timerColName) * 60;
+            update(tRef, { status: "대기", endAt: null, remaining: baseSec, ack: false, colName: timerColName });
             setCellBlink(key,false);
           }
         }
@@ -828,7 +845,8 @@
             tick();
             intervals[key] = setInterval(tick, 250);
           } else {
-            const base = DEFAULT_MINUTES;
+            const timerColName = v.colName || getColNameByKey(key);
+            const base = getTimerMinutes(timerColName);
             const remain = (typeof v.remaining === "number" && v.remaining > 0)
               ? v.remaining
               : (status === "완료" ? 0 : base * 60);
@@ -941,8 +959,8 @@
                 <button class="mini-btn mini-start" onclick="startTimer('${key}', '${colName}'); event.stopPropagation();">진행</button>
                 <button class="mini-btn mini-stop"  onclick="stopTimer('${key}'); event.stopPropagation();">중지</button>
                 <div class="adjust-box">
-                  <button class="btn-adjust" onclick="adjustTime('${key}', 30); event.stopPropagation();">+</button>
-                  <button class="btn-adjust" onclick="adjustTime('${key}',-30); event.stopPropagation();">-</button>
+                  <button class="btn-adjust" onclick="adjustTime('${key}', 30, '${colName}'); event.stopPropagation();">+</button>
+                  <button class="btn-adjust" onclick="adjustTime('${key}', -30, '${colName}'); event.stopPropagation();">-</button>
                 </div>
               </div>
             </div>`;
