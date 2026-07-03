@@ -14,6 +14,7 @@
       --dept-2:#90ee90;     /* 2과: 연두색 */
       --dept-3:#d2b48c;     /* 3과: 갈색(탄 색) */
       --dept-4:#ffc0cb;     /* 4과: 핑크색 */
+      --dept-5:#ffd700;     /* 5과: 노란색 */
     }
 
     /* ===== 레이아웃 ===== */
@@ -260,6 +261,7 @@
         <button class="btn-call" id="call-1F-2과" title="1층-2과" onclick="toggleCall('1F','2과')">2</button>
         <button class="btn-call" id="call-1F-3과" title="1층-3과" onclick="toggleCall('1F','3과')">3</button>
         <button class="btn-call" id="call-1F-4과" title="1층-4과" onclick="toggleCall('1F','4과')">4</button>
+        <button class="btn-call" id="call-1F-5과" title="1층-5과" onclick="toggleCall('1F','5과')">5</button>
         <button class="btn-call" id="call-1F-양방" title="1층-양방" onclick="toggleCall('1F','양방')">양</button>
       </div>
 
@@ -273,6 +275,7 @@
         <button class="btn-call" id="call-2F-2과" title="2층-2과" onclick="toggleCall('2F','2과')">2</button>
         <button class="btn-call" id="call-2F-3과" title="2층-3과" onclick="toggleCall('2F','3과')">3</button>
         <button class="btn-call" id="call-2F-4과" title="2층-4과" onclick="toggleCall('2F','4과')">4</button>
+        <button class="btn-call" id="call-2F-5과" title="2층-5과" onclick="toggleCall('2F','5과')">5</button>
         <button class="btn-call" id="call-2F-양방" title="2층-양방" onclick="toggleCall('2F','양방')">양</button>
       </div>
     </div>
@@ -305,6 +308,7 @@
       <button class="sound-btn chan" data-dept="2과" onclick="toggleListen('2과')">2과</button>
       <button class="sound-btn chan" data-dept="3과" onclick="toggleListen('3과')">3과</button>
       <button class="sound-btn chan" data-dept="4과" onclick="toggleListen('4과')">4과</button>
+      <button class="sound-btn chan" data-dept="5과" onclick="toggleListen('5과')">5과</button>
       <button class="sound-btn chan" data-dept="양방" onclick="toggleListen('양방')">양방</button>
     </div>
 
@@ -373,7 +377,7 @@
       return Date.now() + serverOffset;
     }
 
-    const DEPTS  = ["1과","2과","3과","4과","양방"];
+    const DEPTS  = ["1과","2과","3과","4과","5과","양방"];
     const FLOORS = ["1F","2F"];
 
     let currentFloor = new URLSearchParams(location.search).get('floor') || localStorage.getItem('currentFloor') || '1F';
@@ -421,7 +425,8 @@
       "1과":"var(--dept-1)",
       "2과":"var(--dept-2)",
       "3과":"var(--dept-3)",
-      "4과":"var(--dept-4)"
+      "4과":"var(--dept-4)",
+      "5과":"var(--dept-5)"
     };
 
     const intervals = {};
