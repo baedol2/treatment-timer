@@ -68,9 +68,9 @@
     }
 
     th:nth-child(1){ width:170px; }
-    th:nth-child(2){ width:250px; text-align:center; }
+    th:nth-child(2){ width:300px; text-align:center; }
     td:nth-child(2){ text-align:left; }
-    th:nth-child(3), th:nth-child(4), th:nth-child(5){ width:210px; }
+    th:nth-child(3), th:nth-child(4), th:nth-child(5){ width:230px; }
     th:nth-child(6){ width:240px; }
 
     .name-cell{
@@ -89,8 +89,12 @@
       min-width:96px; text-align:left; letter-spacing:1px;
     }
     .right-col{
-      display:grid; grid-auto-flow:row; grid-template-columns: repeat(3, minmax(120px, 1fr));
-      gap:12px; justify-content:end; align-content:center;
+      display:grid;
+  grid-auto-flow:row;
+  grid-template-columns: repeat(3, minmax(80px, 1fr));
+  gap:8px;
+  justify-content:end;
+  align-content:center;
     }
 
     .pill{ display:inline-block; padding:10px 16px; border-radius:999px; font-size:18px; font-weight:900; }
