@@ -54,12 +54,7 @@
     .day-chip{ border:none; border-radius:999px; padding:12px 18px; font-size:18px; cursor:pointer; background:#fff; }
     .day-chip.on{ outline:3px solid #ff9800; background:#fff3e0; }
 
-    table{ width:100%;
-  table-layout:fixed;
-  border-collapse:collapse;
-  background:#fff;
-  box-shadow:0 2px 8px rgba(0,0,0,0.03); }
-    
+    table{ width:100%; border-collapse:collapse; background:#fff; box-shadow:0 2px 8px rgba(0,0,0,0.03); }
     thead{ background:#002f6c; color:#fff; }
     th,td{ border:1px solid #ececec; padding:12px 10px; text-align:center; font-size:18px; }
     thead th{
@@ -68,9 +63,9 @@
     }
 
     th:nth-child(1){ width:170px; }
-    th:nth-child(2){ width:300px; text-align:center; }
+    th:nth-child(2){ width:420px; text-align:center; }
     td:nth-child(2){ text-align:left; }
-    th:nth-child(3), th:nth-child(4), th:nth-child(5){ width:230px; }
+    th:nth-child(3), th:nth-child(4), th:nth-child(5){ width:210px; }
     th:nth-child(6){ width:240px; }
 
     .name-cell{
@@ -89,12 +84,8 @@
       min-width:96px; text-align:left; letter-spacing:1px;
     }
     .right-col{
-      display:grid;
-  grid-auto-flow:row;
-  grid-template-columns: repeat(3, minmax(80px, 1fr));
-  gap:8px;
-  justify-content:end;
-  align-content:center;
+      display:grid; grid-auto-flow:row; grid-template-columns: repeat(3, minmax(120px, 1fr));
+      gap:12px; justify-content:end; align-content:center;
     }
 
     .pill{ display:inline-block; padding:10px 16px; border-radius:999px; font-size:18px; font-weight:900; }
